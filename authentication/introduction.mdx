@@ -1,0 +1,29 @@
+---
+title: "Introduction"
+---
+
+<Note>
+  To get the `client_id` and `client_secret`, you need to request for API access
+  at [API Access
+  Keys](https://stage-cloud.belio.co.ke/team-overview/api-access-keys)
+</Note>
+
+Use your `client_id` and `client_secret` to obtain a Bearer token for authentication.
+Once you have your Bearer token, you can start making requests to our API endpoints.
+
+## How to Authenticate
+
+Authentication is simple - just include your Bearer token in the Authorization header when making API requests to our endpoints.
+
+```http
+Authorization: Bearer <YOUR_BEARER_TOKEN>
+```
+
+## Advanced Security
+
+On the [API Access Keys](https://stage-cloud.belio.co.ke/team-overview/api-access-keys) page, you can set up additional security measures:
+
+- **IP Whitelisting**: Restrict API access to specific IP addresses, adding an extra layer of security for your production environment.
+- **Web Origins**: Define allowed web origins (domains) that can make API requests, preventing unauthorized cross-origin requests.
+
+These security features help ensure that only trusted sources can access your API keys and make requests to the Belio REST API.

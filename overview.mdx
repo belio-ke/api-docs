@@ -1,0 +1,35 @@
+---
+title: "Overview"
+icon: "webhook"
+---
+
+Belio provides REST API endpoints for developers to integrate with our platform.
+The API is designed to be easy to use and flexible, allowing you to interact
+with your data in a way that suits your needs.
+
+```http
+https://api.belio.co.ke/v1
+```
+
+This API follows HTTP rules, enabling a wide range of HTTP clients can be used to interact with the API.
+
+## Getting Started
+
+To get started, request for API access at [API Access Keys](https://stage-cloud.belio.co.ke/team-overview/api-access-keys).
+This will provide you with a `client_id` and `client_secret`.
+Make sure to keep these credentials secure, as they are used to authenticate your requests.
+
+<Note>
+  Your `client_secret` is only shown once at generation. Store it securely. If
+  lost, you can generate a new one from the API Access Keys page.
+</Note>
+
+## Available Endpoints
+
+The API provides a variety of endpoints to interact with different resources.
+The following is a list of the main endpoints available:
+
+| Endpoint                           | Description                                           |
+| :--------------------------------- | :---------------------------------------------------- |
+| [Send Message](/send-message/post) | Send messages using `sendToOne` or `sendToMany` modes |
+| [Service](/service/get)            | Retrieve services                                     |

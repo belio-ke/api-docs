@@ -1,0 +1,154 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Belio API",
+    "description": "OpenAPI Specification for Belio's REST API",
+    "license": {
+      "name": "MIT"
+    },
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/realms/api-dev/protocol/openid-connect/token": {
+      "servers": [
+        {
+          "url": "https://keycloak.belio.co.ke",
+          "description": "Authorization Server"
+        }
+      ],
+      "post": {
+        "description": "Obtain an access token using client credentials flow",
+        "requestBody": {
+          "description": "Client authentication details",
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "client_id": {
+                    "type": "string",
+                    "description": "The client identifier"
+                  },
+                  "client_secret": {
+                    "type": "string",
+                    "description": "The client secret"
+                  },
+                  "grant_type": {
+                    "type": "string",
+                    "enum": ["client_credentials"],
+                    "default": "client_credentials"
+                  }
+                },
+                "required": ["client_id", "client_secret", "grant_type"]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful token response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Authentication error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "TokenResponse": {
+        "type": "object",
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "description": "The access token. This is used as a bearer token in the Authorization header of requests to the API."
+          },
+          "expires_in": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Lifetime of the access token in seconds"
+          },
+          "refresh_expires_in": {
+            "type": "integer",
+            "format": "int32",
+            "default": 0,
+            "description": "Lifetime of the refresh token in seconds"
+          },
+          "token_type": {
+            "type": "string",
+            "enum": ["Bearer"],
+            "description": "Type of the token"
+          },
+          "not-before-policy": {
+            "type": "integer",
+            "format": "int32",
+            "default": 0,
+            "description": "Not Before Policy time"
+          },
+          "scope": {
+            "type": "string",
+            "default": "profile email",
+            "description": "Scopes associated with the token"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "error_description": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
