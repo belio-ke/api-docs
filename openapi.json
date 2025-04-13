@@ -8,6 +8,17 @@
     },
     "version": "1.0.0"
   },
+  "servers": [
+    {
+      "url": "https://stage-mobilize-api-service/v1",
+      "description": "API Server"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
   "paths": {
     "/realms/api-dev/protocol/openid-connect/token": {
       "servers": [
@@ -17,6 +28,7 @@
         }
       ],
       "post": {
+        "security": [],
         "description": "Obtain an access token using client credentials flow",
         "requestBody": {
           "description": "Client authentication details",
@@ -61,7 +73,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/AuthError"
                 }
               }
             }
@@ -71,7 +83,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/AuthError"
                 }
               }
             }
@@ -81,7 +93,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Authentication error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
                 }
               }
             }
@@ -91,7 +113,170 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/message/{serviceId}": {
+      "post": {
+        "description": "Send a message to one or multiple recipients",
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Unique identifier for the messaging service"
+          }
+        ],
+        "requestBody": {
+          "description": "Message details for sending to one or multiple recipients",
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "title": "SendToOne",
+                    "description": "Send message to a single recipient",
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": ["SendToOne"],
+                        "description": "Indicates sending to a single recipient"
+                      },
+                      "address": {
+                        "type": "string",
+                        "description": "Recipient's phone number e.g +254712345678, 25412345678, 0712345678"
+                      },
+                      "message": {
+                        "type": "string",
+                        "description": "Message content to be delivered"
+                      },
+                      "receiptRequest": {
+                        "type": "object",
+                        "properties": {
+                          "correlator": {
+                            "type": "string",
+                            "description": "Client-provided identifier for correlation"
+                          },
+                          "callbackUrl": {
+                            "type": "string",
+                            "format": "uri",
+                            "description": "URL for delivery receipt callbacks"
+                          }
+                        }
+                      }
+                    },
+                    "required": ["type", "address", "message"]
+                  },
+                  {
+                    "title": "SendToMany",
+                    "description": "Send message to multiple recipients",
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": ["SendToMany"],
+                        "description": "Indicates sending to multiple recipients"
+                      },
+                      "addresses": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "List of recipients' phone numbers e.g [+254712345678, 25412345678, 0712345678]"
+                      },
+                      "message": {
+                        "type": "string",
+                        "description": "Message content to be delivered to all recipients"
+                      },
+                      "receiptRequest": {
+                        "type": "object",
+                        "properties": {
+                          "correlator": {
+                            "type": "string",
+                            "description": "Client-provided identifier for correlation"
+                          },
+                          "callbackUrl": {
+                            "type": "string",
+                            "format": "uri",
+                            "description": "URL for delivery receipt callbacks"
+                          }
+                        }
+                      }
+                    },
+                    "required": ["type", "addresses", "message"]
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Message sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageSendResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid input parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - invalid authentication credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authentication error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Authentication error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIError"
                 }
               }
             }
@@ -138,7 +323,31 @@
           }
         }
       },
-      "Error": {
+      "MessageSendResponse": {
+        "type": "object",
+        "properties": {
+          "desc": {
+            "type": "object",
+            "description": "Description of the response",
+            "properties": {
+              "requestId": {
+                "type": "string",
+                "format": "uuid",
+                "description": "Unique identifier for the message request"
+              },
+              "units": {
+                "type": "integer",
+                "description": "Number of credit units consumed by the request"
+              },
+              "addresses": {
+                "type": "integer",
+                "description": "Number of recipient addresses processed"
+              }
+            }
+          }
+        }
+      },
+      "AuthError": {
         "type": "object",
         "properties": {
           "error": {
@@ -148,6 +357,20 @@
             "type": "string"
           }
         }
+      },
+      "APIError": {
+        "type": "object",
+        "properties": {
+          "desc": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
       }
     }
   }

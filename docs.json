@@ -23,6 +23,10 @@
               "authentication/introduction",
               "authentication/bearer-token"
             ]
+          },
+          {
+            "group": "Message",
+            "pages": ["message/introduction", "message/send"]
           }
         ]
       }
