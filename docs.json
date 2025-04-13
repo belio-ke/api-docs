@@ -25,6 +25,10 @@
             ]
           },
           {
+            "group": "Service",
+            "pages": ["service/list"]
+          },
+          {
             "group": "Message",
             "pages": ["message/introduction", "message/send"]
           }

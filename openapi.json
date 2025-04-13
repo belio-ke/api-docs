@@ -121,6 +121,63 @@
         }
       }
     },
+    "/service": {
+      "get": {
+        "description": "Retrieve a list of available messaging services",
+        "responses": {
+          "200": {
+            "description": "List of available messaging services",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServicesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - invalid authentication credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authentication error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Authentication error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/message/{serviceId}": {
       "post": {
         "description": "Send a message to one or multiple recipients",
@@ -142,22 +199,32 @@
               "schema": {
                 "oneOf": [
                   {
-                    "title": "SendToOne",
+                    "title": "SendToEach",
                     "description": "Send message to a single recipient",
                     "type": "object",
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["SendToOne"],
+                        "enum": ["SendToEach"],
                         "description": "Indicates sending to a single recipient"
                       },
-                      "address": {
-                        "type": "string",
-                        "description": "Recipient's phone number e.g +254712345678, 25412345678, 0712345678"
-                      },
-                      "message": {
-                        "type": "string",
-                        "description": "Message content to be delivered"
+                      "messages": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "text": {
+                              "type": "string",
+                              "description": "Message content to be delivered. Cannot be empty"
+                            },
+                            "phone": {
+                              "type": "string",
+                              "description": "Recipient's phone number e.g +254712345678, 25412345678, 0712345678. Cannot be empty"
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        "description": "Messages and recipients"
                       },
                       "receiptRequest": {
                         "type": "object",
@@ -171,7 +238,8 @@
                             "format": "uri",
                             "description": "URL for delivery receipt callbacks"
                           }
-                        }
+                        },
+                        "additionalProperties": false
                       }
                     },
                     "required": ["type", "address", "message"]
@@ -186,16 +254,16 @@
                         "enum": ["SendToMany"],
                         "description": "Indicates sending to multiple recipients"
                       },
+                      "message": {
+                        "type": "string",
+                        "description": "Message content to be delivered to all recipients. Cannot be empty"
+                      },
                       "addresses": {
                         "type": "array",
                         "items": {
                           "type": "string"
                         },
-                        "description": "List of recipients' phone numbers e.g [+254712345678, 25412345678, 0712345678]"
-                      },
-                      "message": {
-                        "type": "string",
-                        "description": "Message content to be delivered to all recipients"
+                        "description": "List of recipients' phone numbers e.g [+254712345678, 25412345678, 0712345678]. Cannot be empty"
                       },
                       "receiptRequest": {
                         "type": "object",
@@ -209,7 +277,8 @@
                             "format": "uri",
                             "description": "URL for delivery receipt callbacks"
                           }
-                        }
+                        },
+                        "additionalProperties": false
                       }
                     },
                     "required": ["type", "addresses", "message"]
@@ -222,7 +291,7 @@
         },
         "responses": {
           "200": {
-            "description": "Message sent successfully",
+            "description": "Message(s) sent successfully",
             "content": {
               "application/json": {
                 "schema": {
@@ -323,12 +392,71 @@
           }
         }
       },
+      "ServicesResponse": {
+        "type": "object",
+        "properties": {
+          "desc": {
+            "type": "object",
+            "description": "The response",
+            "properties": {
+              "result": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Unique identifier for the service"
+                    },
+                    "serviceName": {
+                      "type": "string",
+                      "description": "Name of the service"
+                    },
+                    "productType": {
+                      "type": "string",
+                      "enum": [
+                        "SMS",
+                        "USSD",
+                        "AIRTIME",
+                        "DATA_BUNDLE",
+                        "WHATSAPP"
+                      ],
+                      "description": "Type of product associated with the service e.g SMS"
+                    },
+                    "teamId": {
+                      "type": "string",
+                      "description": "Identifier for the team associated with the service"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": ["Draft", "Active", "Offline", "Suspended"],
+                      "default": "Draft",
+                      "description": "Status of the service"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Timestamp when the service was created"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Timestamp when the service was last updated",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
       "MessageSendResponse": {
         "type": "object",
         "properties": {
           "desc": {
             "type": "object",
-            "description": "Description of the response",
+            "description": "The response",
             "properties": {
               "requestId": {
                 "type": "string",
