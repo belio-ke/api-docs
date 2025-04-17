@@ -10,7 +10,7 @@
   },
   "servers": [
     {
-      "url": "https://stage-mobilize-api-service/v1",
+      "url": "https://stage-api.belio.co.ke",
       "description": "API Server"
     }
   ],
