@@ -5,7 +5,7 @@ title: "Introduction"
 <Note>
   To get the `client_id` and `client_secret`, you need to request for API access
   at [API Access
-  Keys](https://stage-cloud.belio.co.ke/team-overview/api-access-keys)
+  Clients](https://stage-cloud.belio.co.ke/team-overview/api-access-keys)
 </Note>
 
 Use your `client_id` and `client_secret` to obtain a Bearer token for authentication.
@@ -21,9 +21,17 @@ Authorization: Bearer <YOUR_BEARER_TOKEN>
 
 ## Advanced Security
 
-On the [API Access Keys](https://stage-cloud.belio.co.ke/team-overview/api-access-keys) page, you can set up additional security measures:
+On the [API Access Clients](https://stage-cloud.belio.co.ke/team-overview/api-access-keys) page, you can set up additional security measures:
+
+- **Authorization Scopes**: Define specific scopes for your API keys, controlling access to different parts of the API. Available scopes include:
+
+  - `mobilize.sms.send.oneway`: Send one way SMS
+  - `mobilize.service.list`: List services
 
 - **IP Whitelisting**: Restrict API access to specific IP addresses, adding an extra layer of security for your production environment.
+  Example: `192.168.1.1, 10.0.0.5, 203.0.113.42, 2001:db8:85a3::8a2e:370:7334, fd00:1234:5678::1`
+
 - **Web Origins**: Define allowed web origins (domains) that can make API requests, preventing unauthorized cross-origin requests.
+  Example: `https://yourdomain.com, https://app.yourcompany.io`
 
 These security features help ensure that only trusted sources can access your API keys and make requests to the Belio REST API.
