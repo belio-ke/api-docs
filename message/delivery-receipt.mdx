@@ -22,6 +22,7 @@ A delivery receipt is sent as an HTTP POST request to your callback URL with the
 
 ```json
 {
+  "type": "DeliveryReceipt",
   "correlator": "8f24c8c6-7e7c-4b6f-a622-d4a25f91d3c1",
   "phone": "+254123456789",
   "timestamp": "2025-06-02T14:30:00Z",
@@ -31,14 +32,15 @@ A delivery receipt is sent as an HTTP POST request to your callback URL with the
 
 ### Fields Explanation
 
-| Field            | Type   | Description                                                            |
-| ---------------- | ------ | ---------------------------------------------------------------------- |
-| `correlator`     | String | Unique ID that correlates with your original message request           |
-| `phone`          | String | Recipient's phone number                                               |
-| `timestamp`      | String | ISO-8601 formatted date and time when the delivery status was recorded |
-| `deliveryStatus` | String | Current delivery status of the message                                 |
-| `reason`         | String | Optional human-readable explanation for the delivery status            |
-| `reasonCode`     | String | Optional provider-specific code related to the delivery status         |
+| Field            | Type   | Description                                                                  |
+| ---------------- | ------ | ---------------------------------------------------------------------------- |
+| `type`           | String | Type of the request, which is always `DeliveryReceipt` for delivery receipts |
+| `correlator`     | String | Unique ID that correlates with your original message request                 |
+| `phone`          | String | Recipient's phone number                                                     |
+| `timestamp`      | String | ISO-8601 formatted date and time when the delivery status was recorded       |
+| `deliveryStatus` | String | Current delivery status of the message                                       |
+| `reason`         | String | Optional human-readable explanation for the delivery status                  |
+| `reasonCode`     | String | Optional provider-specific code related to the delivery status               |
 
 ### Possible Delivery Status Values
 
