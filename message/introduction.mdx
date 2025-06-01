@@ -9,9 +9,9 @@ management and monitoring of message delivery through callbacks.
 
 Before you begin, ensure you have:
 
-- A valid and active **Service** - You can obtain one by visiting the [Services](https://stage-cloud.belio.co.ke/services) page
+- A valid and active **Service** - You can obtain one by visiting the [Services](https://belio.co.ke/services) page
 - The **Service ID** - Use the [Service](/service) endpoint to list all services and retrieve the ID of the specific one you intend to use
-- **API Client Authorization** - This endpoint requires the `mobilize.sms.send.oneway` API client authorization scope to send one way messages. You can set up scopes on the [API Clients](https://stage-cloud.belio.co.ke/team-overview/api-access-keys) page
+- **API Client Authorization** - This endpoint requires the `mobilize.sms.send.oneway` API client authorization scope to send one way messages. You can set up scopes on the [API Clients](https://belio.co.ke/team-overview/api-access-keys) page
 
 ## Advanced Features
 
@@ -25,7 +25,7 @@ you send, enabling you to track their status and confirm successful delivery. Th
 
 ```bash
 curl --request POST \
-  --url https://stage-mobilize-api-service/v1/message/{serviceId} \
+  --url https://api.belio.co.ke/message/{serviceId} \
   --header 'Authorization: Bearer <token>' \
   --header 'Content-Type: application/json' \
   --data '{

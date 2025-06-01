@@ -1,0 +1,57 @@
+---
+title: Delivery Receipts
+---
+
+Delivery receipts provide a mechanism to track the status of messages sent through the API. When you send a message with a `receiptRequest`, the system will send a delivery receipt to your specified callback URL once the message reaches its final state.
+This allows you to monitor the delivery status of your messages in real-time.
+
+<Note>
+  Delivery receipts are sent to the callback URL specified in the
+  `receiptRequest` object of the message request. If you do not include a
+  `receiptRequest`, no delivery receipt will be sent.
+</Note>
+
+<Note>
+  Ensure that the callback URL is publicly accessible and can handle incoming
+  HTTP POST requests to receive the delivery receipts.
+</Note>
+
+## Delivery Receipt Format
+
+A delivery receipt is sent as an HTTP POST request to your callback URL with the following JSON structure:
+
+```json
+{
+  "correlator": "8f24c8c6-7e7c-4b6f-a622-d4a25f91d3c1",
+  "phone": "+254123456789",
+  "timestamp": "2025-06-02T14:30:00Z",
+  "deliveryStatus": "Delivered"
+}
+```
+
+### Fields Explanation
+
+| Field            | Type   | Description                                                            |
+| ---------------- | ------ | ---------------------------------------------------------------------- |
+| `correlator`     | String | Unique ID that correlates with your original message request           |
+| `phone`          | String | Recipient's phone number                                               |
+| `timestamp`      | String | ISO-8601 formatted date and time when the delivery status was recorded |
+| `deliveryStatus` | String | Current delivery status of the message                                 |
+| `reason`         | String | Optional human-readable explanation for the delivery status            |
+| `reasonCode`     | String | Optional provider-specific code related to the delivery status         |
+
+### Possible Delivery Status Values
+
+| Status               | Description                                                |
+| -------------------- | ---------------------------------------------------------- |
+| `Waiting`            | Delivery process is pending and hasn't been attempted yet  |
+| `Delivered`          | Message was successfully delivered to the recipient        |
+| `DeliveryUncertain`  | Delivery status is ambiguous or unknown                    |
+| `DeliveryImpossible` | Delivery failed and was deemed impossible                  |
+| `SenderBlacklisted`  | Sender is blacklisted, preventing delivery                 |
+| `InsufficientFunds`  | Delivery failed due to insufficient account credits        |
+| `InvalidLinkId`      | The provided link ID for delivery was invalid              |
+| `SubscriberOptedOut` | Recipient has opted out and cannot receive messages        |
+| `AbsentSubscriber`   | Recipient is temporarily unavailable or unreachable        |
+| `InvalidMsisdn`      | Recipient's phone number is invalid                        |
+| `Failed`             | Termination failed while attempting to handover to gateway |
