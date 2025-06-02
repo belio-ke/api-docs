@@ -30,7 +30,11 @@
           },
           {
             "group": "Message",
-            "pages": ["message/introduction", "message/send"]
+            "pages": [
+              "message/introduction",
+              "message/send",
+              "message/delivery-receipt"
+            ]
           }
         ]
       }
@@ -59,7 +63,7 @@
     "primary": {
       "type": "button",
       "label": "Dashboard",
-      "href": "https://stage-cloud.belio.co.ke/dashboard"
+      "href": "https://belio.co.ke/dashboard"
     }
   }
 }

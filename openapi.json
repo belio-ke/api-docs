@@ -10,7 +10,7 @@
   },
   "servers": [
     {
-      "url": "https://stage-api.belio.co.ke",
+      "url": "https://api.belio.co.ke",
       "description": "API Server"
     }
   ],
@@ -20,10 +20,10 @@
     }
   ],
   "paths": {
-    "/realms/api-dev/protocol/openid-connect/token": {
+    "/realms/api/protocol/openid-connect/token": {
       "servers": [
         {
-          "url": "https://keycloak.belio.co.ke",
+          "url": "https://account.belio.co.ke",
           "description": "Authorization Server"
         }
       ],
@@ -407,7 +407,7 @@
           },
           "scope": {
             "type": "string",
-            "default": "profile email",
+            "default": "mobilize.service.list mobilize.sms.send.oneway",
             "description": "Scopes associated with the token"
           }
         }
