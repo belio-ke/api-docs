@@ -23,7 +23,7 @@
     "/realms/api/protocol/openid-connect/token": {
       "servers": [
         {
-          "url": "https://keycloak.belio.co.ke",
+          "url": "https://account.belio.co.ke",
           "description": "Authorization Server"
         }
       ],
