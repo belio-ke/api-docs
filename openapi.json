@@ -484,12 +484,36 @@
                 "description": "Unique identifier for the message request"
               },
               "units": {
-                "type": "integer",
-                "description": "Number of credit units consumed by the request"
+                "type": "object",
+                "description": "Number of credit units consumed by the request",
+                "properties": {
+                  "Safaricom": {
+                    "type": "integer",
+                    "const": 34,
+                    "description": "Number of safaricom credits consumed by request"
+                  },
+                  "Airtel": {
+                    "type": "integer",
+                    "const": 16,
+                    "description": "Number of airtel credits consumed by request"
+                  }
+                }
               },
               "addresses": {
-                "type": "integer",
-                "description": "Number of recipient addresses processed"
+                "type": "object",
+                "description": "Number of recipient addresses processed",
+                "properties": {
+                  "Safaricom": {
+                    "type": "integer",
+                    "const": 34,
+                    "description": "Number of safaricom recipient addresses processed"
+                  },
+                  "Airtel": {
+                    "type": "integer",
+                    "const": 45,
+                    "description": "Number of airtel recipient addresses processed"
+                  }
+                }
               }
             }
           }
