@@ -79,7 +79,7 @@
             }
           },
           "401": {
-            "description": "Unauthorized error",
+            "description": "Unauthenticated - invalid credentials",
             "content": {
               "application/json": {
                 "schema": {
@@ -89,7 +89,7 @@
             }
           },
           "403": {
-            "description": "Forbidden error",
+            "description": "Unauthorized - Permission denied",
             "content": {
               "application/json": {
                 "schema": {
@@ -99,7 +99,7 @@
             }
           },
           "404": {
-            "description": "Authentication error",
+            "description": "Not Found - the requested resource does not exist",
             "content": {
               "application/json": {
                 "schema": {
@@ -136,7 +136,7 @@
             }
           },
           "401": {
-            "description": "Unauthorized - invalid authentication credentials",
+            "description": "Unauthenticated - invalid credentials",
             "content": {
               "application/json": {
                 "schema": {
@@ -146,7 +146,7 @@
             }
           },
           "403": {
-            "description": "Authentication error",
+            "description": "Unauthorized - Permission denied",
             "content": {
               "application/json": {
                 "schema": {
@@ -156,7 +156,7 @@
             }
           },
           "404": {
-            "description": "Authentication error",
+            "description": "Not Found - the requested resource does not exist",
             "content": {
               "application/json": {
                 "schema": {
@@ -321,7 +321,7 @@
             }
           },
           "401": {
-            "description": "Unauthorized - invalid authentication credentials",
+            "description": "Unauthenticated - invalid credentials",
             "content": {
               "application/json": {
                 "schema": {
@@ -331,7 +331,7 @@
             }
           },
           "403": {
-            "description": "Authentication error",
+            "description": "Unauthorized - Permission denied",
             "content": {
               "application/json": {
                 "schema": {
@@ -341,7 +341,7 @@
             }
           },
           "404": {
-            "description": "Authentication error",
+            "description": "Not Found - the requested resource does not exist",
             "content": {
               "application/json": {
                 "schema": {
@@ -356,6 +356,86 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bundle/{productType}": {
+      "get": {
+        "description": "Retrieve a list of bundles for a product type",
+        "parameters": [
+          {
+            "name": "productType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["SMS", "DATA_BUNDLE"],
+              "default": "SMS"
+            },
+            "description": "Type of product associated with the bundle e.g SMS, DATA_BUNDLE"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of available bundles",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BundlesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated - invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Unauthorized - Permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - the requested resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIError"
                 }
               }
             }
@@ -407,7 +487,7 @@
           },
           "scope": {
             "type": "string",
-            "default": "mobilize.service.list mobilize.sms.send.oneway",
+            "default": "mobilize.service.list mobilize.sms.send.oneway mobilize.bundle.list",
             "description": "Scopes associated with the token"
           }
         }
@@ -512,6 +592,181 @@
                     "type": "integer",
                     "const": 45,
                     "description": "Number of airtel recipient addresses processed"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "BundlesResponse": {
+        "type": "object",
+        "properties": {
+          "desc": {
+            "type": "object",
+            "description": "The response",
+            "properties": {
+              "result": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "reference": {
+                      "type": "string",
+                      "description": "Unique identifier for the bundle"
+                    },
+                    "band": {
+                      "type": "string",
+                      "enum": [
+                        "STARTER",
+                        "STANDARD",
+                        "ENTERPRISE",
+                        "CUSTOM",
+                        "SANDBOX"
+                      ],
+                      "description": "Category of the bundle"
+                    },
+                    "bandName": {
+                      "type": "string",
+                      "description": "Specific category name of the bundle"
+                    },
+                    "rates": {
+                      "type": "object",
+                      "description": "Pricing details for different networks",
+                      "properties": {
+                        "Safaricom": {
+                          "type": "number",
+                          "format": "float",
+                          "description": "Price of the bundle for Safaricom network"
+                        },
+                        "Airtel": {
+                          "type": "number",
+                          "format": "float",
+                          "description": "Price of the bundle for Airtel network"
+                        }
+                      }
+                    },
+                    "balances": {
+                      "type": "array",
+                      "description": "List of balances associated with the bundle",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "number",
+                            "description": "Unique identifier for the balance"
+                          },
+                          "channel": {
+                            "type": "string",
+                            "enum": ["Safaricom", "Airtel"],
+                            "description": "Network channel associated with the balance"
+                          },
+                          "balance": {
+                            "type": "number",
+                            "format": "float",
+                            "description": "Current balance amount"
+                          },
+                          "allotted": {
+                            "type": "number",
+                            "format": "float",
+                            "description": "Total amount allotted to the balance"
+                          },
+                          "reserved": {
+                            "type": "number",
+                            "format": "float",
+                            "description": "Amount reserved from the balance"
+                          },
+                          "expiry": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "Expiry date of the balance"
+                          }
+                        }
+                      }
+                    },
+                    "validity": {
+                      "type": "string",
+                      "description": "Validity period of the bundle",
+                      "nullable": true
+                    },
+                    "createdBy": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "number",
+                          "description": "Unique identifier for the user"
+                        },
+                        "email": {
+                          "type": "string",
+                          "description": "Email address of the user"
+                        },
+                        "firstName": {
+                          "type": "string",
+                          "description": "First name of the user"
+                        },
+                        "lastName": {
+                          "type": "string",
+                          "description": "Last name of the user",
+                          "nullable": true
+                        },
+                        "phone": {
+                          "type": "string",
+                          "description": "Phone number of the user",
+                          "nullable": true
+                        },
+                        "salespersonId": {
+                          "type": "string",
+                          "description": "Identifier for the salesperson",
+                          "nullable": true
+                        }
+                      },
+                      "description": "User who created the bundle"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Timestamp when the bundle was created"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Timestamp when the bundle was last updated",
+                      "nullable": true
+                    },
+                    "modifiedBy": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "number",
+                          "description": "Unique identifier for the user"
+                        },
+                        "email": {
+                          "type": "string",
+                          "description": "Email address of the user"
+                        },
+                        "firstName": {
+                          "type": "string",
+                          "description": "First name of the user"
+                        },
+                        "lastName": {
+                          "type": "string",
+                          "description": "Last name of the user",
+                          "nullable": true
+                        },
+                        "phone": {
+                          "type": "string",
+                          "description": "Phone number of the user",
+                          "nullable": true
+                        },
+                        "salespersonId": {
+                          "type": "string",
+                          "description": "Identifier for the salesperson",
+                          "nullable": true
+                        }
+                      },
+                      "description": "User who last updated the bundle",
+                      "nullable": true
+                    }
                   }
                 }
               }
