@@ -689,39 +689,6 @@
                       "description": "Validity period of the bundle",
                       "nullable": true
                     },
-                    "createdBy": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "number",
-                          "description": "Unique identifier for the user"
-                        },
-                        "email": {
-                          "type": "string",
-                          "description": "Email address of the user"
-                        },
-                        "firstName": {
-                          "type": "string",
-                          "description": "First name of the user"
-                        },
-                        "lastName": {
-                          "type": "string",
-                          "description": "Last name of the user",
-                          "nullable": true
-                        },
-                        "phone": {
-                          "type": "string",
-                          "description": "Phone number of the user",
-                          "nullable": true
-                        },
-                        "salespersonId": {
-                          "type": "string",
-                          "description": "Identifier for the salesperson",
-                          "nullable": true
-                        }
-                      },
-                      "description": "User who created the bundle"
-                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time",
@@ -731,40 +698,6 @@
                       "type": "string",
                       "format": "date-time",
                       "description": "Timestamp when the bundle was last updated",
-                      "nullable": true
-                    },
-                    "modifiedBy": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "number",
-                          "description": "Unique identifier for the user"
-                        },
-                        "email": {
-                          "type": "string",
-                          "description": "Email address of the user"
-                        },
-                        "firstName": {
-                          "type": "string",
-                          "description": "First name of the user"
-                        },
-                        "lastName": {
-                          "type": "string",
-                          "description": "Last name of the user",
-                          "nullable": true
-                        },
-                        "phone": {
-                          "type": "string",
-                          "description": "Phone number of the user",
-                          "nullable": true
-                        },
-                        "salespersonId": {
-                          "type": "string",
-                          "description": "Identifier for the salesperson",
-                          "nullable": true
-                        }
-                      },
-                      "description": "User who last updated the bundle",
                       "nullable": true
                     }
                   }
