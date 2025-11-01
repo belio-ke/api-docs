@@ -383,8 +383,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["SMS", "DATA_BUNDLE"],
-              "default": "SMS"
+              "enum": ["SMS", "DATA_BUNDLE"]
             },
             "description": "Type of product associated with the bundle e.g SMS, DATA_BUNDLE"
           }
@@ -611,6 +610,11 @@
                 "items": {
                   "type": "object",
                   "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": ["DataBundleResponse", "SmsBundleResponse"],
+                      "description": "Type of product associated with the bundle"
+                    },
                     "reference": {
                       "type": "string",
                       "description": "Unique identifier for the bundle"
@@ -622,6 +626,7 @@
                         "STANDARD",
                         "ENTERPRISE",
                         "CUSTOM",
+                        "PERSONAL",
                         "SANDBOX"
                       ],
                       "description": "Category of the bundle"
@@ -652,6 +657,14 @@
                       "items": {
                         "type": "object",
                         "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "DataBundleBalanceResponse",
+                              "SmsBundleBalanceResponse"
+                            ],
+                            "description": "Type of product associated with the balance"
+                          },
                           "id": {
                             "type": "number",
                             "description": "Unique identifier for the balance"
@@ -660,6 +673,27 @@
                             "type": "string",
                             "enum": ["Safaricom", "Airtel"],
                             "description": "Network channel associated with the balance"
+                          },
+                          "denomination": {
+                            "type": "string",
+                            "enum": [
+                              "10MB",
+                              "20MB",
+                              "25MB",
+                              "30MB",
+                              "50MB",
+                              "100MB",
+                              "200MB",
+                              "250MB",
+                              "500MB",
+                              "750MB",
+                              "1GB",
+                              "2GB",
+                              "3GB",
+                              "5GB",
+                              "10GB"
+                            ],
+                            "description": "Denomination for the data bundle balance. Only available when type is `DataBundleBalanceResponse`"
                           },
                           "balance": {
                             "type": "number",
@@ -686,7 +720,7 @@
                     },
                     "validity": {
                       "type": "string",
-                      "description": "Validity period of the bundle",
+                      "description": "Validity period of the bundle e.g 30 days",
                       "nullable": true
                     },
                     "createdAt": {
