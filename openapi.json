@@ -47,11 +47,17 @@
                   },
                   "grant_type": {
                     "type": "string",
-                    "enum": ["client_credentials"],
+                    "enum": [
+                      "client_credentials"
+                    ],
                     "default": "client_credentials"
                   }
                 },
-                "required": ["client_id", "client_secret", "grant_type"]
+                "required": [
+                  "client_id",
+                  "client_secret",
+                  "grant_type"
+                ]
               }
             }
           },
@@ -215,7 +221,9 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["SendToEach"],
+                        "enum": [
+                          "SendToEach"
+                        ],
                         "description": "Indicates sending to a single recipient"
                       },
                       "messages": {
@@ -252,7 +260,11 @@
                         "additionalProperties": false
                       }
                     },
-                    "required": ["type", "address", "message"]
+                    "required": [
+                      "type",
+                      "address",
+                      "message"
+                    ]
                   },
                   {
                     "title": "SendToMany",
@@ -261,7 +273,9 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["SendToMany"],
+                        "enum": [
+                          "SendToMany"
+                        ],
                         "description": "Indicates sending to multiple recipients"
                       },
                       "message": {
@@ -291,7 +305,11 @@
                         "additionalProperties": false
                       }
                     },
-                    "required": ["type", "addresses", "message"]
+                    "required": [
+                      "type",
+                      "addresses",
+                      "message"
+                    ]
                   }
                 ]
               }
@@ -373,6 +391,171 @@
         }
       }
     },
+    "/data/{campaignId}": {
+      "post": {
+        "description": "Disburse mobile data bundles to one or multiple recipients.",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Unique identifier that references the rules for the disbursement."
+          }
+        ],
+        "requestBody": {
+          "description": "Disbursement request payload",
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "title": "SendToMany",
+                    "description": "Send the same denomination to multiple recipients",
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "SendToMany"
+                        ],
+                        "description": "Indicates bulk disbursement mode"
+                      },
+                      "phones": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "List of recipient phone numbers"
+                      },
+                      "denomination": {
+                        "type": "string",
+                        "description": "Data bundle denomination to be provisioned"
+                      },
+                      "receiptRequest": {
+                        "$ref": "#/components/schemas/DataReceiptRequest"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "phones",
+                      "denomination"
+                    ]
+                  },
+                  {
+                    "title": "SendToEach",
+                    "description": "Send a custom denomination to each recipient",
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "SendToEach"
+                        ],
+                        "description": "Indicates per-recipient disbursement mode"
+                      },
+                      "disbursements": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "phone": {
+                              "type": "string",
+                              "description": "Recipient phone number"
+                            },
+                            "denomination": {
+                              "type": "string",
+                              "description": "Denomination assigned to the recipient"
+                            }
+                          },
+                          "required": [
+                            "phone",
+                            "denomination"
+                          ]
+                        },
+                        "description": "List of recipients and denominations"
+                      },
+                      "receiptRequest": {
+                        "$ref": "#/components/schemas/DataReceiptRequest"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "dіsbursements"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Request successfully queued for processing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataDisbursementResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error due to missing or invalid fields",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated - invalid or expired token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Unauthorized - permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Business rule validation failure (e.g. unsupported denomination)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal system error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/bundle/{productType}": {
       "get": {
         "description": "Retrieve a list of bundles for a product type",
@@ -383,7 +566,10 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["SMS", "DATA_BUNDLE"]
+              "enum": [
+                "SMS",
+                "DATA_BUNDLE"
+              ]
             },
             "description": "Type of product associated with the bundle e.g SMS, DATA_BUNDLE"
           }
@@ -475,7 +661,9 @@
           },
           "token_type": {
             "type": "string",
-            "enum": ["Bearer"],
+            "enum": [
+              "Bearer"
+            ],
             "description": "Type of the token"
           },
           "not-before-policy": {
@@ -528,7 +716,12 @@
                     },
                     "status": {
                       "type": "string",
-                      "enum": ["Draft", "Active", "Offline", "Suspended"],
+                      "enum": [
+                        "Draft",
+                        "Active",
+                        "Offline",
+                        "Suspended"
+                      ],
                       "default": "Draft",
                       "description": "Status of the service"
                     },
@@ -598,6 +791,34 @@
           }
         }
       },
+      "DataReceiptRequest": {
+        "type": "object",
+        "properties": {
+          "correlator": {
+            "type": "string",
+            "description": "Unique correlation identifier (max 100 chars)"
+          },
+          "callbackUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Public callback URL for delivery receipts"
+          }
+        }
+      },
+      "DataDisbursementResponse": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier assigned to the request"
+          },
+          "acceptedCount": {
+            "type": "integer",
+            "description": "Number of disbursements accepted for processing"
+          }
+        }
+      },
       "BundlesResponse": {
         "type": "object",
         "properties": {
@@ -612,7 +833,10 @@
                   "properties": {
                     "type": {
                       "type": "string",
-                      "enum": ["DataBundleResponse", "SmsBundleResponse"],
+                      "enum": [
+                        "DataBundleResponse",
+                        "SmsBundleResponse"
+                      ],
                       "description": "Type of product associated with the bundle"
                     },
                     "reference": {
@@ -671,7 +895,10 @@
                           },
                           "channel": {
                             "type": "string",
-                            "enum": ["Safaricom", "Airtel"],
+                            "enum": [
+                              "Safaricom",
+                              "Airtel"
+                            ],
                             "description": "Network channel associated with the balance"
                           },
                           "denomination": {
