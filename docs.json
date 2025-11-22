@@ -15,7 +15,9 @@
         "groups": [
           {
             "group": "REST API",
-            "pages": ["overview"]
+            "pages": [
+              "overview"
+            ]
           },
           {
             "group": "Authentication",
@@ -26,7 +28,9 @@
           },
           {
             "group": "Service",
-            "pages": ["service/list"]
+            "pages": [
+              "service/list"
+            ]
           },
           {
             "group": "Message",
@@ -37,8 +41,18 @@
             ]
           },
           {
+            "group": "Mobile Data",
+            "pages": [
+              "mobile-data/introduction",
+              "mobile-data/send",
+              "mobile-data/delivery-receipt"
+            ]
+          },
+          {
             "group": "Bundle",
-            "pages": ["bundle/list"]
+            "pages": [
+              "bundle/list"
+            ]
           }
         ]
       }

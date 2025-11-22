@@ -1,0 +1,66 @@
+---
+title: Delivery Receipts
+---
+
+Delivery receipts provide a mechanism to track the final status of data bundle disbursement requests. When you submit a request with a `receiptRequest` object, the system will send a delivery receipt to your specified callback URL once the provisioning attempt reaches its final state.
+This enables real-time monitoring of data disbursement success, failure, or pending conditions.
+
+<Note>
+  Delivery receipts are only sent when a `receiptRequest` object is included in the original data disbursement request.
+</Note>
+
+<Note>
+  Ensure that the callback URL is publicly accessible and can accept incoming HTTP `POST` requests without requiring authentication.
+</Note>
+
+## Delivery Receipt Format
+
+A delivery receipt is sent as an HTTP `POST` request to the specified callback URL containing the following JSON payload:
+
+```json
+{
+  "correlator": "8f24c8c6-7e7c-4b6f-a622-d4a25f91d3c1",
+  "phone": "+254123456789",
+  "denomination": "2GB",
+  "timestamp": "2025-06-02T14:30:00Z",
+  "status": "Delivered",
+  "reason": "ok",
+  "reasonCode": "200"
+}
+```
+
+---
+
+### Fields Explanation
+
+| Field          | Type   | Description                                                                                       |
+|----------------|--------|---------------------------------------------------------------------------------------------------|
+| `correlator`   | String | The same correlator supplied in your initial disbursement request. Used for tracing and matching. |
+| `phone`        | String | The recipient MSISDN in international format.                                                     |
+| `denomination` | String | The specific mobile data bundle attempted for provisioning.                                       |
+| `timestamp`    | String | ISO-8601 timestamp indicating when the final delivery outcome was recorded.                       |
+| `status`       | String | The final delivery result of the data disbursement.                                               |
+| `reason`       | String | *Optional.* Human-readable explanation describing the delivery status.                            |
+| `reasonCode`   | String | *Optional.* Provider or system code explaining the cause of a failure or delivery state.          |
+
+---
+
+### Possible Delivery Status Values
+
+| Status                | Description                                                                                   |
+|-----------------------|-----------------------------------------------------------------------------------------------|
+| `Waiting`             | The disbursement is awaiting processing.                                                      |
+| `Delivered`           | Signifies successful delivery of the message to the recipient.                                |
+| `Uncertain`           | The delivery status is uncertain, possibly due to a lack of information from the gateway.     |
+| `Failed`              | Termination failed while attempting to handover to gateway                                    |
+| `InvalidMsisdn`       | The recipient's MSISDN (phone number) is invalid.                                             |
+| `InvalidDenomination` | The disbursement was discarded as it is not allowed per campaign rules allowed denominations. |
+| `InsufficientUnits`   | There are not enough units (e.g., credits or balance) to complete the disbursement.           |
+| `Duplicated`          | The disbursement request is duplicated based on campaign rules frequency validation.          |
+
+---
+
+<Note>
+    Callback endpoints must return **HTTP 200 OK** to acknowledge receipt. Failure to do so may trigger retry behavior
+    depending on delivery policies.
+</Note>
