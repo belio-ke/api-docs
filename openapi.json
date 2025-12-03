@@ -391,6 +391,76 @@
         }
       }
     },
+    "/data/campaign": {
+      "get": {
+        "description": "Fetches all campaigns for the authenticated team.",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "1-indexed page number"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "minimum": 1
+            },
+            "description": "Max number of items per page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Campaigns retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampaignListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated - invalid or missing token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Unauthorized - the user does not have permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/data/{campaignId}": {
       "post": {
         "description": "Disburse mobile data bundles to one or multiple recipients.",
@@ -425,14 +495,17 @@
                       },
                       "phones": {
                         "type": "array",
+                        "minItems": 1,
                         "items": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "Recipient phone number"
                         },
-                        "description": "List of recipient phone numbers"
+                        "description": "List of recipients' phone numbers e.g [712345678, 11234567, 712345678]. Cannot be empty"
                       },
                       "denomination": {
                         "type": "string",
-                        "description": "Data bundle denomination to be provisioned"
+                        "minLength": 1,
+                        "description": "Bundle to be sent to recipient (example: '500MB', '2GB'). The bundle denominations should exist in the chosen campaign"
                       },
                       "receiptRequest": {
                         "$ref": "#/components/schemas/DataReceiptRequest"
@@ -442,7 +515,8 @@
                       "type",
                       "phones",
                       "denomination"
-                    ]
+                    ],
+                    "additionalProperties": false
                   },
                   {
                     "title": "SendToEach",
@@ -454,10 +528,11 @@
                         "enum": [
                           "SendToEach"
                         ],
-                        "description": "Indicates per-recipient disbursement mode"
+                        "description": "Indicates per-recipient bundle disbursement mode"
                       },
                       "disbursements": {
                         "type": "array",
+                        "minItems": 1,
                         "items": {
                           "type": "object",
                           "properties": {
@@ -467,15 +542,17 @@
                             },
                             "denomination": {
                               "type": "string",
-                              "description": "Denomination assigned to the recipient"
+                              "minLength": 1,
+                              "description": "Bundle denomination to be sent to recipient"
                             }
                           },
                           "required": [
                             "phone",
                             "denomination"
-                          ]
+                          ],
+                          "additionalProperties": false
                         },
-                        "description": "List of recipients and denominations"
+                        "description": "List of recipients with individual denominations"
                       },
                       "receiptRequest": {
                         "$ref": "#/components/schemas/DataReceiptRequest"
@@ -483,8 +560,9 @@
                     },
                     "required": [
                       "type",
-                      "dіsbursements"
-                    ]
+                      "disbursements"
+                    ],
+                    "additionalProperties": false
                   }
                 ]
               }
@@ -791,18 +869,149 @@
           }
         }
       },
+      "CampaignListResponse": {
+        "type": "object",
+        "properties": {
+          "desc": {
+            "type": "string",
+            "example": "OK"
+          },
+          "result": {
+            "$ref": "#/components/schemas/CampaignListResult"
+          }
+        }
+      },
+      "CampaignListResult": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "description": "Current page number"
+          },
+          "pageSize": {
+            "type": "integer",
+            "description": "Number of items per page"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total number of campaigns"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Campaign"
+            }
+          }
+        }
+      },
+      "Campaign": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique campaign ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the campaign"
+          },
+          "description": {
+            "type": "string",
+            "description": "Text summary of the campaign"
+          },
+          "teamId": {
+            "type": "string",
+            "description": "Owning team ID"
+          },
+          "serviceId": {
+            "type": "string",
+            "description": "Linked service ID"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Active",
+              "Archived"
+            ],
+            "description": "Status of the campaign"
+          },
+          "rules": {
+            "$ref": "#/components/schemas/CampaignRules"
+          }
+        }
+      },
+      "CampaignRules": {
+        "type": "object",
+        "properties": {
+          "frequency": {
+            "$ref": "#/components/schemas/CampaignFrequency"
+          },
+          "allowedDenominations": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "20MB",
+                "50MB",
+                "100MB",
+                "250MB",
+                "500MB",
+                "1GB",
+                "2GB",
+                "5GB",
+                "10GB"
+              ]
+            },
+            "description": "List of allowed denominations"
+          },
+          "expiry": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Optional expiry timestamp"
+          }
+        }
+      },
+      "CampaignFrequency": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "OneTime",
+              "Hourly",
+              "Daily",
+              "Weekly",
+              "BiWeekly",
+              "Monthly",
+              "Quarterly",
+              "SemiAnnual",
+              "Annual",
+              "Unlimited"
+            ],
+            "description": "Frequency type of the campaign"
+          }
+        }
+      },
       "DataReceiptRequest": {
         "type": "object",
+        "description": "Receipt callback configuration",
         "properties": {
           "correlator": {
             "type": "string",
-            "description": "Unique correlation identifier (max 100 chars)"
+            "maxLength": 100,
+            "description": "Unique correlation identifier used to match delivery receipts to the original request"
           },
           "callbackUrl": {
             "type": "string",
             "format": "uri",
-            "description": "Public callback URL for delivery receipts"
-          }
+            "description": "Public HTTPS callback URL to receive delivery receipts"
+          },
+          "required": [
+            "correlator",
+            "callbackUrl"
+          ],
+          "additionalProperties": false
         }
       },
       "DataDisbursementResponse": {
@@ -904,19 +1113,13 @@
                           "denomination": {
                             "type": "string",
                             "enum": [
-                              "10MB",
                               "20MB",
-                              "25MB",
-                              "30MB",
                               "50MB",
                               "100MB",
-                              "200MB",
                               "250MB",
                               "500MB",
-                              "750MB",
                               "1GB",
                               "2GB",
-                              "3GB",
                               "5GB",
                               "10GB"
                             ],
