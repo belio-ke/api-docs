@@ -7,6 +7,15 @@
     "light": "#07C983",
     "dark": "#15803D"
   },
+  "api": {
+    "playground": {
+      "display": "interactive"
+    },
+    "examples": {
+      "defaults": "required",
+      "prefill": true
+    }
+  },
   "favicon": "/favicon.svg",
   "navigation": {
     "tabs": [
@@ -38,6 +47,12 @@
               "message/introduction",
               "message/send",
               "message/delivery-receipt"
+            ]
+          },
+          {
+            "group": "Campaign",
+            "pages": [
+              "campaign/list"
             ]
           },
           {
