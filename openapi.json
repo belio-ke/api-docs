@@ -1006,13 +1006,13 @@
             "type": "string",
             "format": "uri",
             "description": "Public HTTPS callback URL to receive delivery receipts"
-          },
-          "required": [
-            "correlator",
-            "callbackUrl"
-          ],
-          "additionalProperties": false
-        }
+          }
+        },
+        "required": [
+          "correlator",
+          "callbackUrl"
+        ],
+        "additionalProperties": false
       },
       "DataDisbursementResponse": {
         "type": "object",
@@ -1022,9 +1022,39 @@
             "format": "uuid",
             "description": "Unique identifier assigned to the request"
           },
-          "acceptedCount": {
-            "type": "integer",
-            "description": "Number of disbursements accepted for processing"
+          "units": {
+            "type": "object",
+            "description": "Number of credit units consumed by the request, grouped by channel and denomination",
+            "properties": {
+              "Safaricom": {
+                "type": "object",
+                "description": "Units consumed per denomination for Safaricom",
+                "additionalProperties": {
+                  "type": "integer"
+                }
+              },
+              "Airtel": {
+                "type": "object",
+                "description": "Units consumed per denomination for Airtel",
+                "additionalProperties": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "addresses": {
+            "type": "object",
+            "description": "Number of recipient addresses processed",
+            "properties": {
+              "Safaricom": {
+                "type": "integer",
+                "description": "Number of Safaricom recipient addresses processed"
+              },
+              "Airtel": {
+                "type": "integer",
+                "description": "Number of Airtel recipient addresses processed"
+              }
+            }
           }
         }
       },
