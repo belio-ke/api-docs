@@ -4,17 +4,13 @@ openapi: "POST /data/{campaignId}"
 ---
 
 <Note>
-    Refer to [Authentication](/authentication) for information on how to obtain a
-    Bearer token.
-</Note>
-
-<Note>
-    This endpoint requires appropriate API authorization to perform mobile data disbursement. You can set up scopes on the
-    <a href="https://cloud.belio.co.ke/team-overview/api-access-keys" target="_blank">API Clients</a> page.
+  Refer to [Authentication](/authentication) for information on how to obtain a
+  Bearer token. This endpoint requires the `reward.mobile-data.disburse` API
+  client authorization scope to disburse mobile data. You can set up scopes on
+  the [API Clients](https://cloud.belio.co.ke/team-overview/api-access-keys)
+  page.
 </Note>
 
 ### Rate Limit
 
-This endpoint is rate limited to **400 disbursements per second**.
-
----
+This endpoint is rate limited to **400** disbursements per second.

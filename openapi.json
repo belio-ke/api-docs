@@ -3,8 +3,9 @@
   "info": {
     "title": "Belio API",
     "description": "OpenAPI Specification for Belio's REST API",
-    "license": {
-      "name": "MIT"
+    "contact": {
+      "name": "Belio API Support",
+      "url": "https://belio.co.ke"
     },
     "version": "1.0.0"
   },
@@ -28,6 +29,8 @@
         }
       ],
       "post": {
+        "operationId": "getAccessToken",
+        "tags": ["Authentication"],
         "security": [],
         "description": "Obtain an access token using client credentials flow",
         "requestBody": {
@@ -47,17 +50,11 @@
                   },
                   "grant_type": {
                     "type": "string",
-                    "enum": [
-                      "client_credentials"
-                    ],
+                    "enum": ["client_credentials"],
                     "default": "client_credentials"
                   }
                 },
-                "required": [
-                  "client_id",
-                  "client_secret",
-                  "grant_type"
-                ]
+                "required": ["client_id", "client_secret", "grant_type"]
               }
             }
           },
@@ -129,6 +126,8 @@
     },
     "/service": {
       "get": {
+        "operationId": "listServices",
+        "tags": ["Service"],
         "description": "Retrieve a list of available messaging services",
         "responses": {
           "200": {
@@ -196,6 +195,8 @@
     },
     "/message/{serviceId}": {
       "post": {
+        "operationId": "sendMessage",
+        "tags": ["Message"],
         "description": "Send a message to one or multiple recipients",
         "parameters": [
           {
@@ -221,9 +222,7 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": [
-                          "SendToEach"
-                        ],
+                        "enum": ["SendToEach"],
                         "description": "Indicates sending to a single recipient"
                       },
                       "messages": {
@@ -260,11 +259,7 @@
                         "additionalProperties": false
                       }
                     },
-                    "required": [
-                      "type",
-                      "address",
-                      "message"
-                    ]
+                    "required": ["type", "messages"]
                   },
                   {
                     "title": "SendToMany",
@@ -273,9 +268,7 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": [
-                          "SendToMany"
-                        ],
+                        "enum": ["SendToMany"],
                         "description": "Indicates sending to multiple recipients"
                       },
                       "message": {
@@ -305,11 +298,7 @@
                         "additionalProperties": false
                       }
                     },
-                    "required": [
-                      "type",
-                      "addresses",
-                      "message"
-                    ]
+                    "required": ["type", "addresses", "message"]
                   }
                 ]
               }
@@ -393,6 +382,8 @@
     },
     "/data/campaign": {
       "get": {
+        "operationId": "listCampaigns",
+        "tags": ["Campaign"],
         "description": "Fetches all campaigns for the authenticated team.",
         "parameters": [
           {
@@ -463,6 +454,8 @@
     },
     "/data/{campaignId}": {
       "post": {
+        "operationId": "disburseData",
+        "tags": ["Mobile Data"],
         "description": "Disburse mobile data bundles to one or multiple recipients.",
         "parameters": [
           {
@@ -482,52 +475,13 @@
               "schema": {
                 "oneOf": [
                   {
-                    "title": "SendToMany",
-                    "description": "Send the same denomination to multiple recipients",
-                    "type": "object",
-                    "properties": {
-                      "type": {
-                        "type": "string",
-                        "enum": [
-                          "SendToMany"
-                        ],
-                        "description": "Indicates bulk disbursement mode"
-                      },
-                      "phones": {
-                        "type": "array",
-                        "minItems": 1,
-                        "items": {
-                          "type": "string",
-                          "description": "Recipient phone number"
-                        },
-                        "description": "List of recipients' phone numbers e.g [712345678, 11234567, 712345678]. Cannot be empty"
-                      },
-                      "denomination": {
-                        "type": "string",
-                        "minLength": 1,
-                        "description": "Bundle to be sent to recipient (example: '500MB', '2GB'). The bundle denominations should exist in the chosen campaign"
-                      },
-                      "receiptRequest": {
-                        "$ref": "#/components/schemas/DataReceiptRequest"
-                      }
-                    },
-                    "required": [
-                      "type",
-                      "phones",
-                      "denomination"
-                    ],
-                    "additionalProperties": false
-                  },
-                  {
                     "title": "SendToEach",
                     "description": "Send a custom denomination to each recipient",
                     "type": "object",
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": [
-                          "SendToEach"
-                        ],
+                        "enum": ["SendToEach"],
                         "description": "Indicates per-recipient bundle disbursement mode"
                       },
                       "disbursements": {
@@ -542,14 +496,28 @@
                             },
                             "denomination": {
                               "type": "string",
-                              "minLength": 1,
-                              "description": "Bundle denomination to be sent to recipient"
+                              "enum": [
+                                "10MB",
+                                "20MB",
+                                "25MB",
+                                "30MB",
+                                "50MB",
+                                "100MB",
+                                "150MB",
+                                "200MB",
+                                "250MB",
+                                "500MB",
+                                "750MB",
+                                "1GB",
+                                "2GB",
+                                "3GB",
+                                "5GB",
+                                "10GB"
+                              ],
+                              "description": "Bundle denomination to be sent to recipient. Should exist in the chosen campaign"
                             }
                           },
-                          "required": [
-                            "phone",
-                            "denomination"
-                          ],
+                          "required": ["phone", "denomination"],
                           "additionalProperties": false
                         },
                         "description": "List of recipients with individual denominations"
@@ -558,10 +526,55 @@
                         "$ref": "#/components/schemas/DataReceiptRequest"
                       }
                     },
-                    "required": [
-                      "type",
-                      "disbursements"
-                    ],
+                    "required": ["type", "disbursements"],
+                    "additionalProperties": false
+                  },
+                  {
+                    "title": "SendToMany",
+                    "description": "Send the same denomination to multiple recipients",
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": ["SendToMany"],
+                        "description": "Indicates bulk disbursement mode"
+                      },
+                      "phones": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                          "type": "string",
+                          "description": "Recipient phone number"
+                        },
+                        "description": "List of recipients' phone numbers e.g [712345678, 11234567, 712345678]. Cannot be empty"
+                      },
+                      "denomination": {
+                        "type": "string",
+                        "enum": [
+                          "10MB",
+                          "20MB",
+                          "25MB",
+                          "30MB",
+                          "50MB",
+                          "100MB",
+                          "150MB",
+                          "200MB",
+                          "250MB",
+                          "500MB",
+                          "750MB",
+                          "1GB",
+                          "2GB",
+                          "3GB",
+                          "5GB",
+                          "10GB"
+                        ],
+                        "description": "Bundle to be sent to recipient. Should exist in the chosen campaign."
+                      },
+                      "receiptRequest": {
+                        "$ref": "#/components/schemas/DataReceiptRequest"
+                      }
+                    },
+                    "required": ["type", "phones", "denomination"],
                     "additionalProperties": false
                   }
                 ]
@@ -636,6 +649,8 @@
     },
     "/bundle/{productType}": {
       "get": {
+        "operationId": "listBundles",
+        "tags": ["Bundle"],
         "description": "Retrieve a list of bundles for a product type",
         "parameters": [
           {
@@ -644,10 +659,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": [
-                "SMS",
-                "DATA_BUNDLE"
-              ]
+              "enum": ["SMS", "DATA_BUNDLE"]
             },
             "description": "Type of product associated with the bundle e.g SMS, DATA_BUNDLE"
           }
@@ -739,9 +751,7 @@
           },
           "token_type": {
             "type": "string",
-            "enum": [
-              "Bearer"
-            ],
+            "enum": ["Bearer"],
             "description": "Type of the token"
           },
           "not-before-policy": {
@@ -752,8 +762,7 @@
           },
           "scope": {
             "type": "string",
-            "default": "mobilize.service.list mobilize.sms.send.oneway mobilize.bundle.list",
-            "description": "Scopes associated with the token"
+            "description": "Space separated list of scopes associated with the access token"
           }
         }
       },
@@ -794,12 +803,7 @@
                     },
                     "status": {
                       "type": "string",
-                      "enum": [
-                        "Draft",
-                        "Active",
-                        "Offline",
-                        "Suspended"
-                      ],
+                      "enum": ["Draft", "Active", "Offline", "Suspended"],
                       "default": "Draft",
                       "description": "Status of the service"
                     },
@@ -809,10 +813,9 @@
                       "description": "Timestamp when the service was created"
                     },
                     "updatedAt": {
-                      "type": "string",
+                      "type": ["string", "null"],
                       "format": "date-time",
-                      "description": "Timestamp when the service was last updated",
-                      "nullable": true
+                      "description": "Timestamp when the service was last updated"
                     }
                   }
                 }
@@ -929,10 +932,7 @@
           },
           "status": {
             "type": "string",
-            "enum": [
-              "Active",
-              "Archived"
-            ],
+            "enum": ["Active", "Archived"],
             "description": "Status of the campaign"
           },
           "rules": {
@@ -951,13 +951,20 @@
             "items": {
               "type": "string",
               "enum": [
+                "10MB",
                 "20MB",
+                "25MB",
+                "30MB",
                 "50MB",
                 "100MB",
+                "150MB",
+                "200MB",
                 "250MB",
                 "500MB",
+                "750MB",
                 "1GB",
                 "2GB",
+                "3GB",
                 "5GB",
                 "10GB"
               ]
@@ -965,9 +972,8 @@
             "description": "List of allowed denominations"
           },
           "expiry": {
-            "type": "string",
+            "type": ["string", "null"],
             "format": "date-time",
-            "nullable": true,
             "description": "Optional expiry timestamp"
           }
         }
@@ -1008,10 +1014,7 @@
             "description": "Public HTTPS callback URL to receive delivery receipts"
           }
         },
-        "required": [
-          "correlator",
-          "callbackUrl"
-        ],
+        "required": ["correlator", "callbackUrl"],
         "additionalProperties": false
       },
       "DataDisbursementResponse": {
@@ -1072,10 +1075,7 @@
                   "properties": {
                     "type": {
                       "type": "string",
-                      "enum": [
-                        "DataBundleResponse",
-                        "SmsBundleResponse"
-                      ],
+                      "enum": ["DataBundleResponse", "SmsBundleResponse"],
                       "description": "Type of product associated with the bundle"
                     },
                     "reference": {
@@ -1134,22 +1134,26 @@
                           },
                           "channel": {
                             "type": "string",
-                            "enum": [
-                              "Safaricom",
-                              "Airtel"
-                            ],
+                            "enum": ["Safaricom", "Airtel"],
                             "description": "Network channel associated with the balance"
                           },
                           "denomination": {
                             "type": "string",
                             "enum": [
+                              "10MB",
                               "20MB",
+                              "25MB",
+                              "30MB",
                               "50MB",
                               "100MB",
+                              "150MB",
+                              "200MB",
                               "250MB",
                               "500MB",
+                              "750MB",
                               "1GB",
                               "2GB",
+                              "3GB",
                               "5GB",
                               "10GB"
                             ],
@@ -1179,9 +1183,8 @@
                       }
                     },
                     "validity": {
-                      "type": "string",
-                      "description": "Validity period of the bundle e.g 30 days",
-                      "nullable": true
+                      "type": ["string", "null"],
+                      "description": "Validity period of the bundle e.g 30 days"
                     },
                     "createdAt": {
                       "type": "string",
@@ -1189,10 +1192,9 @@
                       "description": "Timestamp when the bundle was created"
                     },
                     "updatedAt": {
-                      "type": "string",
+                      "type": ["string", "null"],
                       "format": "date-time",
-                      "description": "Timestamp when the bundle was last updated",
-                      "nullable": true
+                      "description": "Timestamp when the bundle was last updated"
                     }
                   }
                 }
