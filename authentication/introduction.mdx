@@ -25,10 +25,11 @@ Authorization: Bearer <YOUR_BEARER_TOKEN>
 On the [API Access Clients](https://cloud.belio.co.ke/team-overview/api-access-keys) page, you can set up additional security measures:
 
 - **Authorization Scopes**: Define specific scopes for your API keys, controlling access to different parts of the API. Available scopes include:
-
-  - `mobilize.sms.send.oneway`: Send one way SMS
-  - `mobilize.service.list`: List services
-  - `mobilize.bundle.list`: List bundles for a given product type
+  - `message.sms.send.oneway`: Send one-way SMS
+  - `service.list`: List services
+  - `bundle.list`: List bundles for a given product type
+  - `reward.mobile-data.disburse`: Disburse mobile data
+  - `reward.campaign.list`: List mobile data campaigns
 
 - **IP Whitelisting**: Restrict API access to specific IP addresses, adding an extra layer of security for your production environment.
   Example: `192.168.1.1, 10.0.0.5, 203.0.113.42, 2001:db8:85a3::8a2e:370:7334, fd00:1234:5678::1`

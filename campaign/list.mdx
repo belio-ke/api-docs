@@ -4,8 +4,13 @@ openapi: "GET /data/campaign"
 ---
 
 <Note>
-    Refer to <a href="/authentication">Authentication</a> for information on how to obtain a Bearer token.
+  Refer to [Authentication](/authentication) for information on how to obtain a
+  bearer token. This endpoint requires the `reward.campaign.list` API client
+  authorization scope to access the list of campaigns. You can set up scopes on
+  the [API Clients](https://cloud.belio.co.ke/team-overview/api-access-keys)
+  page.
 </Note>
 
 ### Rate Limit
-This endpoint is rate limited to **1 request per second**.
+
+This endpoint is rate limited to **1** request per second.
