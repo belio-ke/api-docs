@@ -4,12 +4,21 @@ openapi: "POST /message/{serviceId}"
 ---
 
 <Note>
-  Refer to [Authentication](/authentication) for information on how to obtain a
-  bearer token. This endpoint requires the `message.sms.send.oneway` API client
-  authorization scope to send one way messages. You can set up scopes on the
-  [API Clients](https://cloud.belio.co.ke/team-overview/api-access-keys) page.
+    Refer to [Authentication](/authentication) for information on how to obtain a
+    bearer token. This endpoint requires the `message.sms.send.oneway` API client
+    authorization scope to send one way messages. You can set up scopes on the
+    [API Clients](https://cloud.belio.co.ke/team-overview/api-access-keys) page.
 </Note>
 
 ### Rate Limit
 
 This endpoint is rate limited to **400** messages per second.
+
+## Request Modes
+
+The API supports two request modes:
+
+- `SendToMany` — same message is sent to multiple recipients
+- `SendToEach` — message is sent to individual recipients.(Messages can be tailored for each recipient)
+
+Both modes support a maximum of **100** recipients per request and a **960** character limit for each message.
