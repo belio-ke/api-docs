@@ -6,27 +6,95 @@ The Mobile Data Disbursement API enables secure provisioning of mobile data bund
 This endpoint supports both bulk distribution scenarios and individualized allocations while maintaining the same
 authentication and access control used across all Belio API services.
 
+Optionally, you can include SMS notifications to recipients after their data bundle has been successfully disbursed.
+
 ## Prerequisites
 
 Before using this endpoint, ensure you have:
 
 - An active campaign for mobile data disbursement — available from the [Campaigns](https://cloud.belio.co.ke/mobile-data/campaigns)
-  page.
+page.
 - There are two ways to get a Campaign ID:
-  - Go to the [Campaigns](https://cloud.belio.co.ke/mobile-data/campaigns) page and copy the ID by clicking the copy icon on the
-    table as shown on the photo below.
-    ![CampaignTableImage](../images/campaigns-page.png)
-  - Call the [List Campaigns](/campaign/list) endpoint to retrieve all available campaigns and their IDs.
+- Go to the [Campaigns](https://cloud.belio.co.ke/mobile-data/campaigns) page and copy the ID by clicking the copy icon on the
+table as shown on the photo below.
+![CampaignTableImage](../images/campaigns-page.png)
+- Call the [List Campaigns](/campaign/list) endpoint to retrieve all available campaigns and their IDs.
 
 - API client authorization — Ensure your API Client includes permission to perform mobile data disbursement via `reward.mobile-data.disbursement`
-  authorization scope. These can be managed from the [API Clients](https://cloud.belio.co.ke/team-overview/api-access-keys) page.
+authorization scope. These can be managed from the [API Clients](https://cloud.belio.co.ke/team-overview/api-access-keys) page.
 
 ---
+
+
+## Optional SMS Notifications
+
+Messaging is optional. If `messaging` is omitted, the request disburses data only (no SMS).
+
+If messaging is used, SMS is sent after successful data disbursement and consumes SMS units independently of data units.
+
+### Messaging Configuration
+
+When `messaging` is provided, `messaging.serviceSelection` is required.
+
+- `DefaultService` — uses an auto-configured/default Belio's SMS service
+- `SelfService` — uses an explicitly provided SMS service ID (`serviceId`). View available services via [List Services](/service/list)
+or [Message Introduction](/message/introduction) .
+
+
+### SendToMany
+
+Use `SendToMany` to send the same `denomination` to multiple `phones`. You may include a single `messaging.message` (max **960** characters) to notify all recipients.
+
+```json
+{
+  "type": "SendToMany",
+  "phones": ["+254712345678", "+254701234567"],
+  "denomination": "1GB"
+}
+```
+
+```json
+{
+  "type": "SendToMany",
+  "phones": ["+254712345678", "+254701234567"],
+  "denomination": "1GB",
+  "messaging": {
+    "message": "Your 1GB bundle has been credited.",
+    "serviceSelection": { "type": "DefaultService" }
+  }
+}
+```
+
+### SendToEach
+
+Use `SendToEach` to send different `denomination` values per recipient. Each disbursement may include an optional `message`, and you can mix recipients with and without messages.
+
+If **any** disbursement includes a `message`, the top-level `messaging` configuration becomes mandatory. If no disbursement includes a message, `messaging` is optional and can be omitted.
+
+```json
+{
+  "type": "SendToEach",
+  "messaging": {
+    "serviceSelection": { "type": "SelfService", "serviceId": "svc_123" }
+  },
+  "disbursements": [
+    { "phone": "+254712345678", "denomination": "2GB", "message": "You’ve received 2GB data." },
+    { "phone": "+254701234567", "denomination": "500MB" }
+  ]
+}
+```
+- API client authorization — Ensure your API Client includes permission to perform SMS sending via `message.sms.send.oneway`
+authorization scope. These can be managed from the [API Clients](https://cloud.belio.co.ke/team-overview/api-access-keys) page.
+
+## Delivery Receipts
+
+You can include an optional `receiptRequest` to receive delivery receipts for data disbursement and (when messaging is used) SMS delivery status. Receipts may be delivered asynchronously and out of order.
 
 ## Optional Delivery Tracking
 
 You may include an optional `receiptRequest` object in the request body to receive webhook notifications when a disbursement
-attempt completes. This enables tracking of delivery outcomes per recipient.
+attempt completes. When messaging is enabled, receipts can also cover SMS delivery status. Receipts may be delivered
+asynchronously and out of order.
 
 The `receiptRequest` object includes:
 

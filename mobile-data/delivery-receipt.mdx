@@ -13,6 +13,14 @@ This enables real-time monitoring of data disbursement success, failure, or pend
   Ensure that the callback URL is publicly accessible and can accept incoming HTTP `POST` requests without requiring authentication.
 </Note>
 
+<Note>
+  If you enabled optional SMS notifications (`messaging`), the callback URL may also receive SMS delivery receipts. SMS receipts use the same format as the Message API delivery receipts; see [Message Delivery Receipts](/message/delivery-receipt).
+</Note>
+
+<Note>
+  Receipts may be delivered asynchronously and out of order.
+</Note>
+
 ## Delivery Receipt Format
 
 A delivery receipt is sent as an HTTP `POST` request to the specified callback URL containing the following JSON payload:
@@ -50,7 +58,7 @@ A delivery receipt is sent as an HTTP `POST` request to the specified callback U
 | Status                | Description                                                                                   |
 |-----------------------|-----------------------------------------------------------------------------------------------|
 | `Waiting`             | The disbursement is awaiting processing.                                                      |
-| `Delivered`           | Signifies successful delivery of the message to the recipient.                                |
+| `Delivered`           | Signifies successful provisioning of the data bundle to the recipient.                        |
 | `Uncertain`           | The delivery status is uncertain, possibly due to a lack of information from the gateway.     |
 | `Failed`              | Termination failed while attempting to handover to gateway                                    |
 | `InvalidMsisdn`       | The recipient's MSISDN (phone number) is invalid.                                             |

@@ -474,84 +474,112 @@
             "application/json": {
               "schema": {
                 "oneOf": [
-                  {
-                    "title": "SendToEach",
-                    "description": "Send a custom denomination to each recipient",
-                    "type": "object",
-                    "properties": {
-                      "type": {
-                        "type": "string",
-                        "enum": ["SendToEach"],
-                        "description": "Indicates per-recipient bundle disbursement mode"
-                      },
-                      "disbursements": {
-                        "type": "array",
-                        "minItems": 1,
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "phone": {
-                              "type": "string",
-                              "description": "Recipient phone number"
-                            },
-                            "denomination": {
-                              "type": "string",
-                              "enum": [
-                                "10MB",
-                                "20MB",
-                                "25MB",
-                                "30MB",
-                                "50MB",
-                                "100MB",
-                                "150MB",
-                                "200MB",
-                                "250MB",
-                                "500MB",
-                                "750MB",
-                                "1GB",
-                                "2GB",
-                                "3GB",
-                                "5GB",
-                                "10GB"
-                              ],
-                              "description": "Bundle denomination to be sent to recipient. Should exist in the chosen campaign"
-                            }
-                          },
-                          "required": ["phone", "denomination"],
-                          "additionalProperties": false
-                        },
-                        "description": "List of recipients with individual denominations"
-                      },
-                      "receiptRequest": {
-                        "$ref": "#/components/schemas/DataReceiptRequest"
-                      }
-                    },
-                    "required": ["type", "disbursements"],
-                    "additionalProperties": false
-                  },
-                  {
-                    "title": "SendToMany",
-                    "description": "Send the same denomination to multiple recipients",
-                    "type": "object",
-                    "properties": {
-                      "type": {
-                        "type": "string",
-                        "enum": ["SendToMany"],
-                        "description": "Indicates bulk disbursement mode"
-                      },
-                      "phones": {
-                        "type": "array",
-                        "minItems": 1,
-                        "items": {
-                          "type": "string",
-                          "description": "Recipient phone number"
-                        },
-                        "description": "List of recipients' phone numbers e.g [712345678, 11234567, 712345678]. Cannot be empty"
-                      },
-                      "denomination": {
-                        "type": "string",
-                        "enum": [
-                          "10MB",
+	                  {
+	                    "title": "SendToEach",
+	                    "description": "Send a custom denomination to each recipient",
+	                    "type": "object",
+	                    "properties": {
+	                      "type": {
+	                        "type": "string",
+	                        "enum": ["SendToEach"],
+	                        "description": "Indicates per-recipient bundle disbursement mode"
+	                      },
+	                      "disbursements": {
+	                        "type": "array",
+	                        "minItems": 1,
+	                        "maxItems": 100,
+	                        "items": {
+	                          "type": "object",
+	                          "properties": {
+	                            "phone": {
+	                              "type": "string",
+	                              "description": "Recipient phone number"
+	                            },
+	                            "denomination": {
+	                              "type": "string",
+	                              "enum": [
+	                                "10MB",
+	                                "20MB",
+	                                "25MB",
+	                                "30MB",
+	                                "50MB",
+	                                "100MB",
+	                                "150MB",
+	                                "200MB",
+	                                "250MB",
+	                                "500MB",
+	                                "750MB",
+	                                "1GB",
+	                                "2GB",
+	                                "3GB",
+	                                "5GB",
+	                                "10GB"
+	                              ],
+	                              "description": "Bundle denomination to be sent to recipient. Should exist in the chosen campaign"
+	                            },
+	                            "message": {
+	                              "type": "string",
+	                              "minLength": 1,
+	                              "maxLength": 960,
+	                              "description": "Optional SMS notification sent after successful data disbursement (requires top-level messaging configuration)."
+	                            }
+	                          },
+	                          "required": ["phone", "denomination"],
+	                          "additionalProperties": false
+	                        },
+	                        "description": "List of recipients with individual denominations"
+	                      },
+	                      "messaging": {
+	                        "$ref": "#/components/schemas/DataMessagingConfig"
+	                      },
+	                      "receiptRequest": {
+	                        "$ref": "#/components/schemas/DataReceiptRequest"
+	                      }
+	                    },
+	                    "required": ["type", "disbursements"],
+	                    "allOf": [
+	                      {
+	                        "if": {
+	                          "properties": {
+	                            "disbursements": {
+	                              "contains": {
+	                                "type": "object",
+	                                "required": ["message"]
+	                              }
+	                            }
+	                          }
+	                        },
+	                        "then": {
+	                          "required": ["messaging"]
+	                        }
+	                      }
+	                    ],
+	                    "additionalProperties": false
+	                  },
+	                  {
+	                    "title": "SendToMany",
+	                    "description": "Send the same denomination to multiple recipients",
+	                    "type": "object",
+	                    "properties": {
+	                      "type": {
+	                        "type": "string",
+	                        "enum": ["SendToMany"],
+	                        "description": "Indicates bulk disbursement mode"
+	                      },
+	                      "phones": {
+	                        "type": "array",
+	                        "minItems": 1,
+	                        "maxItems": 100,
+	                        "items": {
+	                          "type": "string",
+	                          "description": "Recipient phone number"
+	                        },
+	                        "description": "List of recipients' phone numbers. Maximum of 100 per request."
+	                      },
+	                      "denomination": {
+	                        "type": "string",
+	                        "enum": [
+	                          "10MB",
                           "20MB",
                           "25MB",
                           "30MB",
@@ -567,16 +595,19 @@
                           "3GB",
                           "5GB",
                           "10GB"
-                        ],
-                        "description": "Bundle to be sent to recipient. Should exist in the chosen campaign."
-                      },
-                      "receiptRequest": {
-                        "$ref": "#/components/schemas/DataReceiptRequest"
-                      }
-                    },
-                    "required": ["type", "phones", "denomination"],
-                    "additionalProperties": false
-                  }
+	                        ],
+	                        "description": "Bundle to be sent to recipient. Should exist in the chosen campaign."
+	                      },
+	                      "messaging": {
+	                        "$ref": "#/components/schemas/DataMessagingToMany"
+	                      },
+	                      "receiptRequest": {
+	                        "$ref": "#/components/schemas/DataReceiptRequest"
+	                      }
+	                    },
+	                    "required": ["type", "phones", "denomination"],
+	                    "additionalProperties": false
+	                  }
                 ]
               }
             }
@@ -978,10 +1009,10 @@
           }
         }
       },
-      "CampaignFrequency": {
-        "type": "object",
-        "properties": {
-          "type": {
+	      "CampaignFrequency": {
+	        "type": "object",
+	        "properties": {
+	          "type": {
             "type": "string",
             "enum": [
               "OneTime",
@@ -997,12 +1028,75 @@
             ],
             "description": "Frequency type of the campaign"
           }
-        }
-      },
-      "DataReceiptRequest": {
-        "type": "object",
-        "description": "Receipt callback configuration",
-        "properties": {
+	        }
+	      },
+	      "MessagingServiceSelection": {
+	        "description": "Select which SMS service to use when messaging is enabled.",
+	        "oneOf": [
+	          {
+	            "title": "DefaultService",
+	            "type": "object",
+	            "properties": {
+	              "type": {
+	                "type": "string",
+	                "const": "DefaultService",
+	                "description": "Uses the campaign/product default SMS service"
+	              }
+	            },
+	            "required": ["type"],
+	            "additionalProperties": false
+	          },
+	          {
+	            "title": "SelfService",
+	            "type": "object",
+	            "properties": {
+	              "type": {
+	                "type": "string",
+	                "const": "SelfService",
+	                "description": "Uses an explicitly provided SMS service ID"
+	              },
+	              "serviceId": {
+	                "type": "string",
+	                "description": "Unique identifier of the SMS service to use"
+	              }
+	            },
+	            "required": ["type", "serviceId"],
+	            "additionalProperties": false
+	          }
+	        ]
+	      },
+	      "DataMessagingConfig": {
+	        "type": "object",
+	        "description": "Messaging configuration used when sending optional SMS notifications.",
+	        "properties": {
+	          "serviceSelection": {
+	            "$ref": "#/components/schemas/MessagingServiceSelection"
+	          }
+	        },
+	        "required": ["serviceSelection"],
+	        "additionalProperties": false
+	      },
+	      "DataMessagingToMany": {
+	        "type": "object",
+	        "description": "Optional SMS notification sent after successful data disbursement.",
+	        "properties": {
+	          "message": {
+	            "type": "string",
+	            "minLength": 1,
+	            "maxLength": 960,
+	            "description": "SMS content to be delivered to all recipients (SendToMany only)."
+	          },
+	          "serviceSelection": {
+	            "$ref": "#/components/schemas/MessagingServiceSelection"
+	          }
+	        },
+	        "required": ["message", "serviceSelection"],
+	        "additionalProperties": false
+	      },
+	      "DataReceiptRequest": {
+	        "type": "object",
+	        "description": "Receipt callback configuration",
+	        "properties": {
           "correlator": {
             "type": "string",
             "maxLength": 100,
