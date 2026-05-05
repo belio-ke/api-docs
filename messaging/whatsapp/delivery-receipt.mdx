@@ -1,0 +1,96 @@
+---
+title: "Delivery Receipts"
+---
+
+Delivery receipts provide a mechanism to track the status of messages sent through the API.
+When you send a WhatsApp message with a `receiptRequest`, the system will send a delivery receipt to your specified callback
+URL once the message reaches its final state.
+This allows you to monitor the delivery status of your messages in real-time.
+
+<Note>
+    Delivery receipts are sent to the callback URL specified in the
+    `receiptRequest` object of the message request. If you do not include a
+    `receiptRequest`, no delivery receipt will be sent.
+</Note>
+
+<Note>
+    Ensure that the callback URL is publicly accessible and can handle incoming
+    HTTP POST requests to receive the delivery receipts.
+</Note>
+
+### Delivery Receipt Format
+
+```json
+{
+  "type": "WhatsAppDeliveryReceipt",
+  "wamId": "wamid.HBgLMjU0NzAwMTExMjEzFQIAERgSM...",
+  "phone": "254700111213",
+  "timestamp": "2026-04-29T14:32:00+03:00",
+  "deliveryStatus": "Delivered",
+  "conversationId": "conv-abc123",
+  "pricingCategory": "Marketing",
+  "reason": "Internal error",
+  "reasonCode": "99"
+}
+```
+
+| Field           | Type   | Always present | Description                                                              |
+|-----------------|--------|----------------|--------------------------------------------------------------------------|
+| type            | string | Yes            | Always `WhatsAppDeliveryReceipt`                                         |
+| wamId           | string | Yes            | WhatsApp message ID assigned by Meta's servers                           |
+| phone           | string | Yes            | Recipient phone number in E.164 format                                   |
+| timestamp       | string | Yes            | ISO 8601 datetime of the status event                                    |
+| deliveryStatus  | string | Yes            | Current delivery state.                                                  |
+| conversationId  | string | No             | Meta conversation ID; present once a conversation window is opened       |
+| pricingCategory | string | No             | Pricing category applied to this message.                                |
+| reason          | string | No             | Human-readable failure reason; present when `deliveryStatus` is `Failed` |
+| reasonCode      | string | No             | Machine-readable error code; present when `deliveryStatus` is `Failed`   |
+
+### Delivery Statuses
+
+| Value     | WhatsApp UI equivalent | Description                                                                                |
+|-----------|------------------------|--------------------------------------------------------------------------------------------|
+| Waiting   | Clock                  | Message is queued and waiting to be sent to the recipient's device (default initial state) |
+| Sent      | Single checkmark       | Message was sent from WhatsApp servers to the recipient                                    |
+| Delivered | Two checkmarks         | Message was successfully delivered to the recipient's device                               |
+| Read      | Two blue checkmarks    | Message was displayed in an open chat thread on the recipient's device                     |
+| Failed    | Red error triangle     | Message could not be delivered to the recipient's device                                   |
+| Played    | Blue microphone        | Voice message was played for the first time on the recipient's device                      |
+
+### Pricing Categories
+
+WhatsApp Business charges per conversation, categorized by the nature of the message. The `pricingCategory` field in
+delivery receipts and the `units` map in the send response both use these values.
+
+| Value                       | Description                                                                                                      |
+|-----------------------------|------------------------------------------------------------------------------------------------------------------|
+| Authentication              | Sent as part of an authentication flow (e.g. OTP). Authentication rate applies                                   |
+| AuthenticationInternational | Authentication message sent to an international (non-domestic) number. International authentication rate applies |
+| Marketing                   | Promotional or marketing content. Marketing rate applies                                                         |
+| MarketingLite               | Sent via the Marketing Messages API (lighter marketing tier). Marketing Messages API rate applies                |
+| ReferralConversation        | Conversation initiated through a free entry point (e.g. Click-to-WhatsApp ad). No charge applies                 |
+| Service                     | Sent in response to a user-initiated message within the 24-hour service window. Service rate applies             |
+| Utility                     | Transactional or account-related notifications (e.g. order confirmations). Utility rate applies                  |
+
+### Receipt Request
+
+An optional object on send requests that enables delivery status callbacks.
+It must be included in the WhatsApp message request body when sending a message to receive delivery receipts for that message.
+
+```json
+{
+  "correlator": "12345678-1234-5678-1234-567812345678",
+  "callbackUrl": "https://acme.org/whatsapp/delivery-reports"
+}
+```
+
+| Field       | Type   | Constraints                                                                                                  |
+|-------------|--------|--------------------------------------------------------------------------------------------------------------|
+| correlator  | string | Non-empty, maximum 100 characters. Used to correlate callbacks to the originating request. Recommended: UUID |
+| callbackUrl | string | Valid `https://` or `http://` URL. The endpoint must not require authentication                              |
+
+<Warning>
+    When provided, **both fields are required**. An invalid `receiptRequest` causes the entire request to be
+    rejected with
+    `400 Bad Request` before any messages are dispatched.
+</Warning>
