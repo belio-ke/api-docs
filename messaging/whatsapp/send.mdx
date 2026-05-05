@@ -1,0 +1,63 @@
+---
+title: "Send Message"
+openapi: "POST /message/{serviceId}/whatsapp"
+---
+
+<Note>
+    Refer to [Authentication](/authentication) for information on how to obtain a bearer token.
+
+    This endpoint requires the `message.whatsapp.send.oneway` API client authorization scope to send one-way WhatsApp
+    messages.
+
+    You can configure scopes on the [API Clients](https://cloud.belio.co.ke/team-overview/api-access-keys) page.
+</Note>
+
+## Request Modes
+
+The API supports two request modes:
+
+- `TemplateSendToMany` — Sends the same template message with shared parameters to multiple recipients.
+- `TemplateSendToEach` — Sends personalized template messages to individual recipients. Parameters can differ per recipient.
+
+---
+
+### Template Parameters
+
+Templates support dynamic parameters that are substituted into the template body or header when messages are sent.
+
+#### Parameter Types
+
+| Parameter Type              | Required Field | Description                                                            |
+|-----------------------------|----------------|------------------------------------------------------------------------|
+| `BodyNamedParameter`        | `name`         | Substitutes a body placeholder referenced by name (e.g. `{{name}}`)    |
+| `BodyPositionalParameter`   | `position`     | Substitutes a body placeholder referenced by position (e.g. `{{1}}`)   |
+| `HeaderNamedParameter`      | `name`         | Substitutes a header placeholder referenced by name (e.g. `{{name}}`)  |
+| `HeaderPositionalParameter` | `position`     | Substitutes a header placeholder referenced by position (e.g. `{{1}}`) |
+
+### Example
+
+```json
+{
+  "params": [
+    {
+      "type": "BodyNamedParameter",
+      "name": "name",
+      "value": "Alice"
+    },
+    {
+      "type": "BodyPositionalParameter",
+      "position": 1,
+      "value": "Alice"
+    },
+    {
+      "type": "HeaderNamedParameter",
+      "name": "business",
+      "value": "Belio Limited"
+    },
+    {
+      "type": "HeaderPositionalParameter",
+      "position": 1,
+      "value": "Belio Limited"
+    }
+  ]
+}

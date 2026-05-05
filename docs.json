@@ -36,23 +36,40 @@
             ]
           },
           {
-            "group": "Service",
+            "group": "Services",
             "pages": [
               "service/list"
             ]
           },
           {
-            "group": "Message",
+            "group": "Messaging",
             "pages": [
-              "message/introduction",
-              "message/send",
-              "message/delivery-receipt"
-            ]
-          },
-          {
-            "group": "Campaign",
-            "pages": [
-              "campaign/list"
+              "messaging/introduction",
+              {
+                "group": "SMS",
+                "pages": [
+                  "messaging/sms/introduction",
+                  "messaging/sms/send",
+                  "messaging/sms/delivery-receipt"
+                ]
+              },
+              {
+                "group": "WhatsApp",
+                "tag": "COMING SOON",
+                "pages": [
+                  "messaging/whatsapp/introduction",
+                  {
+                    "group": "Templates",
+                    "pages": [
+                      "messaging/whatsapp/templates/introduction",
+                      "messaging/whatsapp/templates/create-template",
+                      "messaging/whatsapp/templates/view-templates"
+                    ]
+                  },
+                  "messaging/whatsapp/send",
+                  "messaging/whatsapp/delivery-receipt"
+                ]
+              }
             ]
           },
           {
@@ -64,9 +81,15 @@
             ]
           },
           {
-            "group": "Bundle",
+            "group": "Bundles",
             "pages": [
               "bundle/list"
+            ]
+          },
+          {
+            "group": "Campaigns",
+            "pages": [
+              "campaign/list"
             ]
           }
         ]

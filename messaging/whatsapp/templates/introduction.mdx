@@ -1,0 +1,82 @@
+Templates are pre-approved message formats that allow you to send structured and reliable messages to users via WhatsApp.
+All messages sent through this API must use a template that has been reviewed and approved by WhatsApp.
+
+Templates are typically categorized into three main types:
+1. **Utility Templates**: Used for sending important information such as order confirmations, appointment reminders, and account updates.
+2. **Marketing Templates**: Used for promotional messages, special offers, and event announcements.
+3. **Authentication Templates**: Used for sending verification codes and authentication messages.
+
+
+### Template Structure
+
+A template is composed of predefined components that can include:
+#### 1.Header
+There are various types of headers that can be used in a template:
+ - **Text Header**: A simple text header that can include dynamic placeholders.
+Must not exceed 60 characters and should have only 1 parameter.
+ - **GIF Header**: Can include an image or videos. Can be used in marketing templates only.
+ - **Location Header**: Can include a location with dynamic placeholders for latitude and longitude.Can be used in marketing and utility templates only.
+ - **Document Header**: Can include a document with dynamic placeholders for the document URL and filename.
+ - **Video Header**: Can include a video with dynamic placeholders for the video URL
+ - **Image Header**: Can include an image with dynamic placeholders for the image URL.
+
+
+#### 2.Body
+Main message content. Supports dynamic placeholders (e.g. `{{name}}`, `{{1}}`) that are replaced with actual values at send time.
+ - **Text Body**: The main text content of the message. Body text must not exceed **1024** characters.
+ - **Media Body**: Can include images, videos, or documents. Can be used in marketing templates only.
+
+#### 3.Footer
+Optional static text, often used for disclaimers or additional context.
+- **Text Footer**: A simple text footer. Must not exceed 60 characters. Can be used in all template types.
+
+#### 4.Buttons (Optional)
+Interactive elements such as quick replies or call-to-action buttons.
+ - **Quick Reply Buttons**: Allow users to respond with predefined options.
+ - **Copy Buttons**: Allow users to copy specific text to their clipboard. A template is limited to only **1** copy button.
+ - **Phone call Buttons**: Allow users to initiate a phone call to a specified number. A template is limited to only 1 phone call button.
+The button text must not exceed 20 characters and the phone number must be in E.164 format (e.g. +1234567890).
+---
+
+### Template Parameters
+
+Templates support dynamic data through parameters, which are used to replace placeholders in the message.
+**A template must have either all named parameters or all positional parameters**; mixing both types within the same template is not allowed.
+
+* **Named Parameters**
+Referenced by name (e.g. `{{name}}`)
+Example: `{ "type": "BodyNamedParameter", "name": "name", "value": "Alice" }`
+
+* **Positional Parameters**
+Referenced by position (e.g. `{{1}}`)
+Example: `{ "type": "BodyPositionalParameter", "position": 1, "value": "Alice" }`
+
+Parameters can be applied to:
+
+* Body content
+* Header content (text or media)
+
+---
+
+
+### Template Approval
+
+Before a template can be used, it must be submitted and approved by Meta.
+
+* Templates must comply with WhatsApp Business policies
+* Approval is required before sending any messages
+* Templates that are rejected or disabled cannot be used
+
+---
+### Important Notes
+<Note>
+    <b>Important</b>
+    * Only **approved templates** can be sent using this API
+    * Template structure (header type, parameters, media format) must match exactly when sending
+    * Incorrect or missing parameters will result in request failure
+    * Templates must be in a **sendable state**
+</Note>
+
+---
+
+By using templates, you ensure that your messages are **compliant, structured, and optimized for delivery**, while enabling dynamic personalization for each recipient.

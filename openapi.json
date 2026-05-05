@@ -30,7 +30,9 @@
       ],
       "post": {
         "operationId": "getAccessToken",
-        "tags": ["Authentication"],
+        "tags": [
+          "Authentication"
+        ],
         "security": [],
         "description": "Obtain an access token using client credentials flow",
         "requestBody": {
@@ -50,11 +52,17 @@
                   },
                   "grant_type": {
                     "type": "string",
-                    "enum": ["client_credentials"],
+                    "enum": [
+                      "client_credentials"
+                    ],
                     "default": "client_credentials"
                   }
                 },
-                "required": ["client_id", "client_secret", "grant_type"]
+                "required": [
+                  "client_id",
+                  "client_secret",
+                  "grant_type"
+                ]
               }
             }
           },
@@ -127,7 +135,9 @@
     "/service": {
       "get": {
         "operationId": "listServices",
-        "tags": ["Service"],
+        "tags": [
+          "Service"
+        ],
         "description": "Retrieve a list of available messaging services",
         "responses": {
           "200": {
@@ -196,7 +206,9 @@
     "/message/{serviceId}": {
       "post": {
         "operationId": "sendMessage",
-        "tags": ["Message"],
+        "tags": [
+          "Message"
+        ],
         "description": "Send a message to one or multiple recipients",
         "parameters": [
           {
@@ -222,7 +234,9 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["SendToEach"],
+                        "enum": [
+                          "SendToEach"
+                        ],
                         "description": "Indicates sending to a single recipient"
                       },
                       "messages": {
@@ -259,7 +273,10 @@
                         "additionalProperties": false
                       }
                     },
-                    "required": ["type", "messages"]
+                    "required": [
+                      "type",
+                      "messages"
+                    ]
                   },
                   {
                     "title": "SendToMany",
@@ -268,7 +285,9 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["SendToMany"],
+                        "enum": [
+                          "SendToMany"
+                        ],
                         "description": "Indicates sending to multiple recipients"
                       },
                       "message": {
@@ -298,7 +317,11 @@
                         "additionalProperties": false
                       }
                     },
-                    "required": ["type", "addresses", "message"]
+                    "required": [
+                      "type",
+                      "addresses",
+                      "message"
+                    ]
                   }
                 ]
               }
@@ -380,10 +403,287 @@
         }
       }
     },
+    "/message/{serviceId}/whatsapp": {
+      "post": {
+        "operationId": "sendWhatsAppMessage",
+        "tags": [
+          "Whatsapp"
+        ],
+        "description": "Sends a WhatsApp template message to one or more recipients via a configured WhatsApp Business Account (WABA). Only approved template messages are supported.",
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Unique identifier of the WhatsApp service"
+          }
+        ],
+        "requestBody": {
+          "description": "WhatsApp template message send request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "title": "TemplateSendToMany",
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "TemplateSendToMany"
+                        ],
+                        "description": "Must be \"TemplateSendToMany\""
+                      },
+                      "phoneNumberId": {
+                        "type": "string",
+                        "description": "Phone number ID of the WABA sender. Must match a number registered on the service"
+                      },
+                      "templateId": {
+                        "type": "string",
+                        "description": "ID of the approved WhatsApp template to send"
+                      },
+                      "addresses": {
+                        "type": "array",
+                        "maxItems": 10,
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "Recipient phone numbers. Maximum 10 per request"
+                      },
+                      "params": {
+                        "type": "array",
+                        "items": {
+                          "oneOf": [
+                            {
+                              "$ref": "#/components/schemas/NamedTemplateParameter"
+                            },
+                            {
+                              "$ref": "#/components/schemas/PositionalTemplateParameter"
+                            }
+                          ],
+                          "discriminator": {
+                            "propertyName": "type"
+                          }
+                        }
+                      },
+                      "receiptRequest": {
+                        "type": "object",
+                        "description": "Delivery receipt callback configuration. When provided, both fields are required.",
+                        "properties": {
+                          "correlator": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "callbackUrl": {
+                            "type": "string",
+                            "format": "uri"
+                          }
+                        },
+                        "required": [
+                          "correlator",
+                          "callbackUrl"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "phoneNumberId",
+                      "templateId",
+                      "addresses",
+                      "params"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "title": "TemplateSendToEach",
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "TemplateSendToEach"
+                        ],
+                        "description": "Must be \"TemplateSendToEach\""
+                      },
+                      "phoneNumberId": {
+                        "type": "string",
+                        "description": "Phone number ID of the WABA sender. Must match a number registered on the service"
+                      },
+                      "templateId": {
+                        "type": "string",
+                        "description": "ID of the approved WhatsApp template to send"
+                      },
+                      "messages": {
+                        "type": "array",
+                        "maxItems": 10,
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "phone": {
+                              "type": "string",
+                              "description": "Recipient phone number"
+                            },
+                            "params": {
+                              "type": "array",
+                              "items": {
+                                "oneOf": [
+                                  {
+                                    "$ref": "#/components/schemas/NamedTemplateParameter"
+                                  },
+                                  {
+                                    "$ref": "#/components/schemas/PositionalTemplateParameter"
+                                  }
+                                ],
+                                "discriminator": {
+                                  "propertyName": "type"
+                                }
+                              }
+                            }
+                          },
+                          "required": [
+                            "phone",
+                            "params"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "description": "Per-recipient message objects. Maximum 10 per request"
+                      },
+                      "receiptRequest": {
+                        "type": "object",
+                        "description": "Delivery receipt callback configuration. When provided, both fields are required.",
+                        "properties": {
+                          "correlator": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "callbackUrl": {
+                            "type": "string",
+                            "format": "uri"
+                          }
+                        },
+                        "required": [
+                          "correlator",
+                          "callbackUrl"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "phoneNumberId",
+                      "templateId",
+                      "messages"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful send request accepted and queued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "WhatsAppResponse"
+                          ]
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "addresses": {
+                          "type": "integer"
+                        },
+                        "units": {
+                          "type": "object",
+                          "description": "Credit units consumed per Pricing Category. Currently always {}."
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "requestId",
+                        "addresses",
+                        "units"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid input parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated - invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - service, phone number ID, or template not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/data/campaign": {
       "get": {
         "operationId": "listCampaigns",
-        "tags": ["Campaign"],
+        "tags": [
+          "Campaign"
+        ],
         "description": "Fetches all campaigns for the authenticated team.",
         "parameters": [
           {
@@ -455,7 +755,9 @@
     "/data/{campaignId}": {
       "post": {
         "operationId": "disburseData",
-        "tags": ["Mobile Data"],
+        "tags": [
+          "Mobile Data"
+        ],
         "description": "Disburse mobile data bundles to one or multiple recipients.",
         "parameters": [
           {
@@ -474,112 +776,126 @@
             "application/json": {
               "schema": {
                 "oneOf": [
-	                  {
-	                    "title": "SendToEach",
-	                    "description": "Send a custom denomination to each recipient",
-	                    "type": "object",
-	                    "properties": {
-	                      "type": {
-	                        "type": "string",
-	                        "enum": ["SendToEach"],
-	                        "description": "Indicates per-recipient bundle disbursement mode"
-	                      },
-	                      "disbursements": {
-	                        "type": "array",
-	                        "minItems": 1,
-	                        "maxItems": 100,
-	                        "items": {
-	                          "type": "object",
-	                          "properties": {
-	                            "phone": {
-	                              "type": "string",
-	                              "description": "Recipient phone number"
-	                            },
-	                            "denomination": {
-	                              "type": "string",
-	                              "enum": [
-	                                "10MB",
-	                                "20MB",
-	                                "25MB",
-	                                "30MB",
-	                                "50MB",
-	                                "100MB",
-	                                "150MB",
-	                                "200MB",
-	                                "250MB",
-	                                "500MB",
-	                                "750MB",
-	                                "1GB",
-	                                "2GB",
-	                                "3GB",
-	                                "5GB",
-	                                "10GB"
-	                              ],
-	                              "description": "Bundle denomination to be sent to recipient. Should exist in the chosen campaign"
-	                            },
-	                            "message": {
-	                              "type": "string",
-	                              "minLength": 1,
-	                              "maxLength": 960,
-	                              "description": "Optional SMS notification sent after successful data disbursement (requires top-level messaging configuration)."
-	                            }
-	                          },
-	                          "required": ["phone", "denomination"],
-	                          "additionalProperties": false
-	                        },
-	                        "description": "List of recipients with individual denominations"
-	                      },
-	                      "messaging": {
-	                        "$ref": "#/components/schemas/DataMessagingConfig"
-	                      },
-	                      "receiptRequest": {
-	                        "$ref": "#/components/schemas/DataReceiptRequest"
-	                      }
-	                    },
-	                    "required": ["type", "disbursements"],
-	                    "allOf": [
-	                      {
-	                        "if": {
-	                          "properties": {
-	                            "disbursements": {
-	                              "contains": {
-	                                "type": "object",
-	                                "required": ["message"]
-	                              }
-	                            }
-	                          }
-	                        },
-	                        "then": {
-	                          "required": ["messaging"]
-	                        }
-	                      }
-	                    ],
-	                    "additionalProperties": false
-	                  },
-	                  {
-	                    "title": "SendToMany",
-	                    "description": "Send the same denomination to multiple recipients",
-	                    "type": "object",
-	                    "properties": {
-	                      "type": {
-	                        "type": "string",
-	                        "enum": ["SendToMany"],
-	                        "description": "Indicates bulk disbursement mode"
-	                      },
-	                      "phones": {
-	                        "type": "array",
-	                        "minItems": 1,
-	                        "maxItems": 100,
-	                        "items": {
-	                          "type": "string",
-	                          "description": "Recipient phone number"
-	                        },
-	                        "description": "List of recipients' phone numbers. Maximum of 100 per request."
-	                      },
-	                      "denomination": {
-	                        "type": "string",
-	                        "enum": [
-	                          "10MB",
+                  {
+                    "title": "SendToEach",
+                    "description": "Send a custom denomination to each recipient",
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "SendToEach"
+                        ],
+                        "description": "Indicates per-recipient bundle disbursement mode"
+                      },
+                      "disbursements": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 100,
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "phone": {
+                              "type": "string",
+                              "description": "Recipient phone number"
+                            },
+                            "denomination": {
+                              "type": "string",
+                              "enum": [
+                                "10MB",
+                                "20MB",
+                                "25MB",
+                                "30MB",
+                                "50MB",
+                                "100MB",
+                                "150MB",
+                                "200MB",
+                                "250MB",
+                                "500MB",
+                                "750MB",
+                                "1GB",
+                                "2GB",
+                                "3GB",
+                                "5GB",
+                                "10GB"
+                              ],
+                              "description": "Bundle denomination to be sent to recipient. Should exist in the chosen campaign"
+                            },
+                            "message": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 960,
+                              "description": "Optional SMS notification sent after successful data disbursement (requires top-level messaging configuration)."
+                            }
+                          },
+                          "required": [
+                            "phone",
+                            "denomination"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "description": "List of recipients with individual denominations"
+                      },
+                      "messaging": {
+                        "$ref": "#/components/schemas/DataMessagingConfig"
+                      },
+                      "receiptRequest": {
+                        "$ref": "#/components/schemas/DataReceiptRequest"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "disbursements"
+                    ],
+                    "allOf": [
+                      {
+                        "if": {
+                          "properties": {
+                            "disbursements": {
+                              "contains": {
+                                "type": "object",
+                                "required": [
+                                  "message"
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        "then": {
+                          "required": [
+                            "messaging"
+                          ]
+                        }
+                      }
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "title": "SendToMany",
+                    "description": "Send the same denomination to multiple recipients",
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "SendToMany"
+                        ],
+                        "description": "Indicates bulk disbursement mode"
+                      },
+                      "phones": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 100,
+                        "items": {
+                          "type": "string",
+                          "description": "Recipient phone number"
+                        },
+                        "description": "List of recipients' phone numbers. Maximum of 100 per request."
+                      },
+                      "denomination": {
+                        "type": "string",
+                        "enum": [
+                          "10MB",
                           "20MB",
                           "25MB",
                           "30MB",
@@ -595,19 +911,23 @@
                           "3GB",
                           "5GB",
                           "10GB"
-	                        ],
-	                        "description": "Bundle to be sent to recipient. Should exist in the chosen campaign."
-	                      },
-	                      "messaging": {
-	                        "$ref": "#/components/schemas/DataMessagingToMany"
-	                      },
-	                      "receiptRequest": {
-	                        "$ref": "#/components/schemas/DataReceiptRequest"
-	                      }
-	                    },
-	                    "required": ["type", "phones", "denomination"],
-	                    "additionalProperties": false
-	                  }
+                        ],
+                        "description": "Bundle to be sent to recipient. Should exist in the chosen campaign."
+                      },
+                      "messaging": {
+                        "$ref": "#/components/schemas/DataMessagingToMany"
+                      },
+                      "receiptRequest": {
+                        "$ref": "#/components/schemas/DataReceiptRequest"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "phones",
+                      "denomination"
+                    ],
+                    "additionalProperties": false
+                  }
                 ]
               }
             }
@@ -681,7 +1001,9 @@
     "/bundle/{productType}": {
       "get": {
         "operationId": "listBundles",
-        "tags": ["Bundle"],
+        "tags": [
+          "Bundle"
+        ],
         "description": "Retrieve a list of bundles for a product type",
         "parameters": [
           {
@@ -690,7 +1012,10 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["SMS", "DATA_BUNDLE"]
+              "enum": [
+                "SMS",
+                "DATA_BUNDLE"
+              ]
             },
             "description": "Type of product associated with the bundle e.g SMS, DATA_BUNDLE"
           }
@@ -782,7 +1107,9 @@
           },
           "token_type": {
             "type": "string",
-            "enum": ["Bearer"],
+            "enum": [
+              "Bearer"
+            ],
             "description": "Type of the token"
           },
           "not-before-policy": {
@@ -834,7 +1161,12 @@
                     },
                     "status": {
                       "type": "string",
-                      "enum": ["Draft", "Active", "Offline", "Suspended"],
+                      "enum": [
+                        "Draft",
+                        "Active",
+                        "Offline",
+                        "Suspended"
+                      ],
                       "default": "Draft",
                       "description": "Status of the service"
                     },
@@ -844,7 +1176,10 @@
                       "description": "Timestamp when the service was created"
                     },
                     "updatedAt": {
-                      "type": ["string", "null"],
+                      "type": [
+                        "string",
+                        "null"
+                      ],
                       "format": "date-time",
                       "description": "Timestamp when the service was last updated"
                     }
@@ -963,7 +1298,10 @@
           },
           "status": {
             "type": "string",
-            "enum": ["Active", "Archived"],
+            "enum": [
+              "Active",
+              "Archived"
+            ],
             "description": "Status of the campaign"
           },
           "rules": {
@@ -1003,16 +1341,19 @@
             "description": "List of allowed denominations"
           },
           "expiry": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time",
             "description": "Optional expiry timestamp"
           }
         }
       },
-	      "CampaignFrequency": {
-	        "type": "object",
-	        "properties": {
-	          "type": {
+      "CampaignFrequency": {
+        "type": "object",
+        "properties": {
+          "type": {
             "type": "string",
             "enum": [
               "OneTime",
@@ -1028,75 +1369,85 @@
             ],
             "description": "Frequency type of the campaign"
           }
-	        }
-	      },
-	      "MessagingServiceSelection": {
-	        "description": "Select which SMS service to use when messaging is enabled.",
-	        "oneOf": [
-	          {
-	            "title": "DefaultService",
-	            "type": "object",
-	            "properties": {
-	              "type": {
-	                "type": "string",
-	                "const": "DefaultService",
-	                "description": "Uses the campaign/product default SMS service"
-	              }
-	            },
-	            "required": ["type"],
-	            "additionalProperties": false
-	          },
-	          {
-	            "title": "SelfService",
-	            "type": "object",
-	            "properties": {
-	              "type": {
-	                "type": "string",
-	                "const": "SelfService",
-	                "description": "Uses an explicitly provided SMS service ID"
-	              },
-	              "serviceId": {
-	                "type": "string",
-	                "description": "Unique identifier of the SMS service to use"
-	              }
-	            },
-	            "required": ["type", "serviceId"],
-	            "additionalProperties": false
-	          }
-	        ]
-	      },
-	      "DataMessagingConfig": {
-	        "type": "object",
-	        "description": "Messaging configuration used when sending optional SMS notifications.",
-	        "properties": {
-	          "serviceSelection": {
-	            "$ref": "#/components/schemas/MessagingServiceSelection"
-	          }
-	        },
-	        "required": ["serviceSelection"],
-	        "additionalProperties": false
-	      },
-	      "DataMessagingToMany": {
-	        "type": "object",
-	        "description": "Optional SMS notification sent after successful data disbursement.",
-	        "properties": {
-	          "message": {
-	            "type": "string",
-	            "minLength": 1,
-	            "maxLength": 960,
-	            "description": "SMS content to be delivered to all recipients (SendToMany only)."
-	          },
-	          "serviceSelection": {
-	            "$ref": "#/components/schemas/MessagingServiceSelection"
-	          }
-	        },
-	        "required": ["message", "serviceSelection"],
-	        "additionalProperties": false
-	      },
-	      "DataReceiptRequest": {
-	        "type": "object",
-	        "description": "Receipt callback configuration",
-	        "properties": {
+        }
+      },
+      "MessagingServiceSelection": {
+        "description": "Select which SMS service to use when messaging is enabled.",
+        "oneOf": [
+          {
+            "title": "DefaultService",
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "DefaultService",
+                "description": "Uses the campaign/product default SMS service"
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "title": "SelfService",
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "SelfService",
+                "description": "Uses an explicitly provided SMS service ID"
+              },
+              "serviceId": {
+                "type": "string",
+                "description": "Unique identifier of the SMS service to use"
+              }
+            },
+            "required": [
+              "type",
+              "serviceId"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "DataMessagingConfig": {
+        "type": "object",
+        "description": "Messaging configuration used when sending optional SMS notifications.",
+        "properties": {
+          "serviceSelection": {
+            "$ref": "#/components/schemas/MessagingServiceSelection"
+          }
+        },
+        "required": [
+          "serviceSelection"
+        ],
+        "additionalProperties": false
+      },
+      "DataMessagingToMany": {
+        "type": "object",
+        "description": "Optional SMS notification sent after successful data disbursement.",
+        "properties": {
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 960,
+            "description": "SMS content to be delivered to all recipients (SendToMany only)."
+          },
+          "serviceSelection": {
+            "$ref": "#/components/schemas/MessagingServiceSelection"
+          }
+        },
+        "required": [
+          "message",
+          "serviceSelection"
+        ],
+        "additionalProperties": false
+      },
+      "DataReceiptRequest": {
+        "type": "object",
+        "description": "Receipt callback configuration",
+        "properties": {
           "correlator": {
             "type": "string",
             "maxLength": 100,
@@ -1108,7 +1459,10 @@
             "description": "Public HTTPS callback URL to receive delivery receipts"
           }
         },
-        "required": ["correlator", "callbackUrl"],
+        "required": [
+          "correlator",
+          "callbackUrl"
+        ],
         "additionalProperties": false
       },
       "DataDisbursementResponse": {
@@ -1169,7 +1523,10 @@
                   "properties": {
                     "type": {
                       "type": "string",
-                      "enum": ["DataBundleResponse", "SmsBundleResponse"],
+                      "enum": [
+                        "DataBundleResponse",
+                        "SmsBundleResponse"
+                      ],
                       "description": "Type of product associated with the bundle"
                     },
                     "reference": {
@@ -1228,7 +1585,10 @@
                           },
                           "channel": {
                             "type": "string",
-                            "enum": ["Safaricom", "Airtel"],
+                            "enum": [
+                              "Safaricom",
+                              "Airtel"
+                            ],
                             "description": "Network channel associated with the balance"
                           },
                           "denomination": {
@@ -1277,7 +1637,10 @@
                       }
                     },
                     "validity": {
-                      "type": ["string", "null"],
+                      "type": [
+                        "string",
+                        "null"
+                      ],
                       "description": "Validity period of the bundle e.g 30 days"
                     },
                     "createdAt": {
@@ -1286,7 +1649,10 @@
                       "description": "Timestamp when the bundle was created"
                     },
                     "updatedAt": {
-                      "type": ["string", "null"],
+                      "type": [
+                        "string",
+                        "null"
+                      ],
                       "format": "date-time",
                       "description": "Timestamp when the bundle was last updated"
                     }
@@ -1315,6 +1681,129 @@
             "type": "string"
           }
         }
+      },
+      "WhatsAppDeliveryStatus": {
+        "type": "string",
+        "description": "Current WhatsApp delivery state.",
+        "enum": [
+          "Waiting",
+          "Sent",
+          "Delivered",
+          "Read",
+          "Failed",
+          "Played"
+        ]
+      },
+      "WhatsAppPricingCategory": {
+        "type": "string",
+        "description": "WhatsApp Business pricing category applied to this message/conversation.",
+        "enum": [
+          "Authentication",
+          "AuthenticationInternational",
+          "Marketing",
+          "MarketingLite",
+          "ReferralConversation",
+          "Service",
+          "Utility"
+        ]
+      },
+      "PositionalTemplateParameter": {
+        "type": "object",
+        "required": [
+          "type",
+          "position",
+          "value"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "BodyPositionalParameter",
+              "HeaderPositionalParameter"
+            ]
+          },
+          "position": {
+            "type": "integer"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "NamedTemplateParameter": {
+        "type": "object",
+        "required": [
+          "type",
+          "name",
+          "value"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "BodyNamedParameter",
+              "HeaderNamedParameter"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "WhatsAppDeliveryReceipt": {
+        "type": "object",
+        "description": "Callback payload posted to the receiptRequest.callbackUrl when a message delivery status changes.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "WhatsAppDeliveryReceipt",
+            "description": "Always \"WhatsAppDeliveryReceipt\""
+          },
+          "wamId": {
+            "type": "string",
+            "description": "WhatsApp message ID assigned by Meta's servers"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Recipient phone number in E.164 format"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 datetime of the status event"
+          },
+          "deliveryStatus": {
+            "$ref": "#/components/schemas/WhatsAppDeliveryStatus"
+          },
+          "conversationId": {
+            "type": "string",
+            "description": "Meta conversation ID; present once a conversation window is opened"
+          },
+          "pricingCategory": {
+            "$ref": "#/components/schemas/WhatsAppPricingCategory"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Human-readable failure reason; present when deliveryStatus is \"Failed\""
+          },
+          "reasonCode": {
+            "type": "string",
+            "description": "Machine-readable error code; present when deliveryStatus is \"Failed\""
+          }
+        },
+        "required": [
+          "type",
+          "wamId",
+          "phone",
+          "timestamp",
+          "deliveryStatus"
+        ],
+        "additionalProperties": false
       }
     },
     "securitySchemes": {
