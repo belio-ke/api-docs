@@ -15,7 +15,7 @@ Use **SMS** when you need maximum reach (OTP, alerts, short updates) and want th
 
 Use **WhatsApp** when you need template-driven messaging (transactional updates, customer engagement, and branded communication) and you already have:
 
-- A configured **WABA**(*WhatsApp Business Account*) and verified phone number.
+- A configured **WABA**(_WhatsApp Business Account_) and verified phone number.
 - **[Approved message templates](./whatsapp/templates/introduction)** to send.
 
 ## Common Concepts
@@ -24,17 +24,21 @@ Across SMS and WhatsApp, you will typically work with:
 
 - **[Authentication](/authentication)**: All requests use Bearer token authentication.
 - **[Authorization scopes](https://cloud.belio.co.ke/team-overview/api-access-keys)**: Your API Client must include the appropriate scope for the channel you are using:
-    - SMS --> `message.sms.send.oneway`
-    - WhatsApp --> `message.whatsapp.send.oneway`
+  - SMS --> `message.sms.send.oneway`
+  - WhatsApp --> `message.whatsapp.send`
 - **Recipients**: Use phone numbers in international format (E.164), e.g. `+254712345678`.
 - **Delivery receipts (callbacks)**: Optionally include `receiptRequest` with a `correlator` and `callbackUrl` to receive asynchronous status updates.
 
 ## Next Steps
 
 Choose a messaging channel to get started:
+
 #### SMS
+
 - [Introduction](./SMS/introduction)
 - [Send Message](./SMS/send)
+
 #### WhatsApp
+
 - [Introduction](./whatsapp/introduction)
 - [Send Message](./whatsapp/send)

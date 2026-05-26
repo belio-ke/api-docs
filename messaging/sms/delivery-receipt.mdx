@@ -22,7 +22,7 @@ A delivery receipt is sent as an HTTP POST request to your callback URL with the
 
 ```json
 {
-  "type": "DeliveryReceipt",
+  "type": "SmsDeliveryReceipt",
   "correlator": "8f24c8c6-7e7c-4b6f-a622-d4a25f91d3c1",
   "phone": "+254123456789",
   "timestamp": "2025-06-02T14:30:00Z",
@@ -32,15 +32,15 @@ A delivery receipt is sent as an HTTP POST request to your callback URL with the
 
 ### Fields Explanation
 
-| Field            | Type   | Description                                                                  |
-| ---------------- | ------ | ---------------------------------------------------------------------------- |
-| `type`           | String | Type of the request, which is always `DeliveryReceipt` for delivery receipts |
-| `correlator`     | String | Unique ID that correlates with your original message request                 |
-| `phone`          | String | Recipient's phone number                                                     |
-| `timestamp`      | String | ISO-8601 formatted date and time when the delivery status was recorded       |
-| `deliveryStatus` | String | Current delivery status of the message                                       |
-| `reason`         | String | Optional human-readable explanation for the delivery status                  |
-| `reasonCode`     | String | Optional provider-specific code related to the delivery status               |
+| Field            | Type   | Description                                                                         |
+| ---------------- | ------ | ----------------------------------------------------------------------------------- |
+| `type`           | String | Type of the request, which is always `SmsDeliveryReceipt` for SMS delivery receipts |
+| `correlator`     | String | Unique ID that correlates with your original message request                        |
+| `phone`          | String | Recipient's phone number                                                            |
+| `timestamp`      | String | ISO-8601 formatted date and time when the delivery status was recorded              |
+| `deliveryStatus` | String | Current delivery status of the message                                              |
+| `reason`         | String | Optional human-readable explanation for the delivery status                         |
+| `reasonCode`     | String | Optional provider-specific code related to the delivery status                      |
 
 ### Possible Delivery Status Values
 
@@ -57,3 +57,38 @@ A delivery receipt is sent as an HTTP POST request to your callback URL with the
 | `AbsentSubscriber`   | Recipient is temporarily unavailable or unreachable        |
 | `InvalidMsisdn`      | Recipient's phone number is invalid                        |
 | `Failed`             | Termination failed while attempting to handover to gateway |
+
+### Receipt Request
+
+An optional object on send requests that enables delivery status callbacks.
+It must be included in the SMS message request body when sending a message to receive delivery receipts for that message.
+
+```json
+{
+  "correlator": "12345678-1234-5678-1234-567812345678",
+  "callbackUrl": "https://acme.org/sms/delivery-reports"
+}
+```
+
+### Receipt Request
+
+An optional object on send requests that enables delivery status callbacks.
+It must be included in the SMS message request body when sending a message to receive delivery receipts for that message.
+
+```json
+{
+  "correlator": "12345678-1234-5678-1234-567812345678",
+  "callbackUrl": "https://acme.org/sms/delivery-reports"
+}
+```
+
+| Field       | Type   | Constraints                                                                                                      |
+| ----------- | ------ | ---------------------------------------------------------------------------------------------------------------- |
+| correlator  | string | Non-empty, maximum 100 characters. Used to correlate callbacks to the originating request (we recommend `UUID`). |
+| callbackUrl | string | Valid `https://` or `http://` URL. The endpoint must not require authentication                                  |
+
+<Warning>
+  When provided, **both fields are required**. An invalid `receiptRequest`
+  causes the entire request to be rejected with `400 Bad Request` before any
+  messages are dispatched.
+</Warning>
