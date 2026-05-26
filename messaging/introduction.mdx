@@ -25,7 +25,7 @@ Across SMS and WhatsApp, you will typically work with:
 - **[Authentication](/authentication)**: All requests use Bearer token authentication.
 - **[Authorization scopes](https://cloud.belio.co.ke/team-overview/api-access-keys)**: Your API Client must include the appropriate scope for the channel you are using:
     - SMS --> `message.sms.send.oneway`
-    - WhatsApp --> `message.whatsapp.send.oneway`
+    - WhatsApp --> `message.whatsapp.send`
 - **Recipients**: Use phone numbers in international format (E.164), e.g. `+254712345678`.
 - **Delivery receipts (callbacks)**: Optionally include `receiptRequest` with a `correlator` and `callbackUrl` to receive asynchronous status updates.
 

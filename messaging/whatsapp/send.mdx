@@ -6,8 +6,7 @@ openapi: "POST /message/{serviceId}/whatsapp"
 <Note>
     Refer to [Authentication](/authentication) for information on how to obtain a bearer token.
 
-    This endpoint requires the `message.whatsapp.send.oneway` API client authorization scope to send one-way WhatsApp
-    messages.
+    This endpoint requires the `message.whatsapp.send` API client authorization scope to send WhatsApp messages.
 
     You can configure scopes on the [API Clients](https://cloud.belio.co.ke/team-overview/api-access-keys) page.
 </Note>
@@ -16,14 +15,14 @@ openapi: "POST /message/{serviceId}/whatsapp"
 
 The API supports two request modes:
 
-- `TemplateSendToMany` — Sends the same template message with shared parameters to multiple recipients.
-- `TemplateSendToEach` — Sends personalized template messages to individual recipients. Parameters can differ per recipient.
+- `TemplateSendToMany` - Sends the same template message with shared parameters to multiple recipients.
+- `TemplateSendToEach` - Sends personalized template messages to individual recipients. Parameters can differ per recipient.
 
 ---
 
 ### Template Parameters
 
-Templates support dynamic parameters that are substituted into the template body or header when messages are sent.
+Templates support dynamic parameters that are substituted into the template body, header, buttons, OTP, offers, carousel cards, media, and location components when messages are sent.
 
 #### Parameter Types
 
