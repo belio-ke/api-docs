@@ -45,16 +45,46 @@ Templates support dynamic data through parameters, which are used to replace pla
 
 * **Named Parameters**
 Referenced by name (e.g. `{{name}}`)
-Example: `{ "type": "BodyNamedParameter", "name": "name", "value": "Alice" }`
+Example:
+```json
+{ "type": "BodyNamedParameter", "name": "name", "value": "Alice" }
+```
 
 * **Positional Parameters**
 Referenced by position (e.g. `{{1}}`)
-Example: `{ "type": "BodyPositionalParameter", "position": 1, "value": "Alice" }`
+Example:
+```json
+{ "type": "BodyPositionalParameter", "position": 1, "value": "Alice" }
+```
 
 Parameters can be applied to:
 
 * Body content
-* Header content (text or media)
+* Header content (text, media, or location)
+* URL, copy, quick reply, voice call (WhatsApp in-app voice call), OTP, and coupon buttons
+* Limited-time offers
+* Carousel cards
+
+#### Supported Parameter Types
+
+| Parameter Type               | Used For                            |
+|------------------------------|-------------------------------------|
+| `BodyNamedParameter`         | Named body placeholders             |
+| `BodyPositionalParameter`    | Positional body placeholders        |
+| `HeaderNamedParameter`       | Named text header placeholders      |
+| `HeaderPositionalParameter`  | Positional text header placeholders |
+| `MediaTemplateParameter`     | Media headers                       |
+| `LocationTemplateParameter`  | Location headers                    |
+| `CopyParameter`              | Copy buttons                        |
+| `TimeToLiveParameter`        | Time-limited templates              |
+| `VoiceCallPayloadParameter`  | Voice call templates                |
+| `OtpParameter`               | OTP templates                       |
+| `UrlNamedParameter`          | Named URL placeholders              |
+| `UrlPositionalParameter`     | Positional URL placeholders         |
+| `CouponCodeParameter`        | Coupon buttons                      |
+| `QuickReplyPayloadParameter` | Quick reply buttons                 |
+| `LimitedTimeOfferParameter`  | Limited-time offers                 |
+| `CarouselCardParameter`      | Carousel cards                      |
 
 ---
 
@@ -74,7 +104,7 @@ Before a template can be used, it must be submitted and approved by Meta.
     * Only **approved templates** can be sent using this API
     * Template structure (header type, parameters, media format) must match exactly when sending
     * Incorrect or missing parameters will result in request failure
-    * Templates must be in a **sendable state**
+    * Templates must be in a **sendable state** (must be approved and not disabled) to be used for sending messages
 </Note>
 
 ---

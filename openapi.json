@@ -1679,6 +1679,9 @@
         "properties": {
           "desc": {
             "type": "string"
+          },
+          "result": {
+            "description": "Optional structured error details."
           }
         }
       },
@@ -1686,12 +1689,21 @@
         "type": "string",
         "description": "Current WhatsApp delivery state.",
         "enum": [
-          "Waiting",
           "Sent",
           "Delivered",
           "Read",
           "Failed",
-          "Played"
+          "Played",
+          "Uncertain"
+        ]
+      },
+      "WhatsAppPricingType": {
+        "type": "string",
+        "description": "WhatsApp billing type applied to this message.",
+        "enum": [
+          "Regular",
+          "FreeCustomerService",
+          "FreeEntryPoint"
         ]
       },
       "WhatsAppPricingCategory": {
@@ -1706,6 +1718,72 @@
           "Service",
           "Utility"
         ]
+      },
+      "WhatsAppPricing": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/WhatsAppPricingType"
+          },
+          "category": {
+            "$ref": "#/components/schemas/WhatsAppPricingCategory"
+          }
+        },
+        "required": [
+          "type",
+          "category"
+        ],
+        "additionalProperties": false
+      },
+      "TemplateParameter": {
+        "description": "Tagged template parameter used to fill body, header, URL, copy, quick reply, voice call, OTP, coupon, offer, carousel, media, or location placeholders.",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/NamedTemplateParameter"
+          },
+          {
+            "$ref": "#/components/schemas/PositionalTemplateParameter"
+          },
+          {
+            "$ref": "#/components/schemas/MediaTemplateParameter"
+          },
+          {
+            "$ref": "#/components/schemas/LocationTemplateParameter"
+          },
+          {
+            "$ref": "#/components/schemas/CopyParameter"
+          },
+          {
+            "$ref": "#/components/schemas/TimeToLiveParameter"
+          },
+          {
+            "$ref": "#/components/schemas/VoiceCallPayloadParameter"
+          },
+          {
+            "$ref": "#/components/schemas/OtpParameter"
+          },
+          {
+            "$ref": "#/components/schemas/UrlNamedParameter"
+          },
+          {
+            "$ref": "#/components/schemas/UrlPositionalParameter"
+          },
+          {
+            "$ref": "#/components/schemas/CouponCodeParameter"
+          },
+          {
+            "$ref": "#/components/schemas/QuickReplyPayloadParameter"
+          },
+          {
+            "$ref": "#/components/schemas/LimitedTimeOfferParameter"
+          },
+          {
+            "$ref": "#/components/schemas/CarouselCardParameter"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type"
+        }
       },
       "PositionalTemplateParameter": {
         "type": "object",
@@ -1723,10 +1801,13 @@
             ]
           },
           "position": {
-            "type": "integer"
+            "type": "integer",
+            "minimum": 1
           },
           "value": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
           }
         },
         "additionalProperties": false
@@ -1747,45 +1828,415 @@
             ]
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1
           },
           "value": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "additionalProperties": false
+      },
+      "MediaTemplateParameter": {
+        "type": "object",
+        "required": [
+          "type",
+          "url"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "MediaTemplateParameter"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "minLength": 1,
+            "description": "Public media URL for an image, video, or document header."
+          },
+          "filename": {
+            "type": "string",
+            "description": "Optional filename for document media."
+          }
+        },
+        "additionalProperties": false
+      },
+      "LocationTemplateParameter": {
+        "type": "object",
+        "required": [
+          "type",
+          "latitude",
+          "longitude"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "LocationTemplateParameter"
+          },
+          "latitude": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "longitude": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "name": {
+            "type": "string"
+          },
+          "address": {
             "type": "string"
           }
         },
         "additionalProperties": false
       },
-      "WhatsAppDeliveryReceipt": {
+      "CopyParameter": {
+        "type": "object",
+        "required": [
+          "type",
+          "value"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "CopyParameter"
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "TimeToLiveParameter": {
+        "type": "object",
+        "required": [
+          "type",
+          "minutes"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "TimeToLiveParameter"
+          },
+          "minutes": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Time-to-live duration in minutes. The accepted range depends on the template configuration."
+          }
+        },
+        "additionalProperties": false
+      },
+      "VoiceCallPayloadParameter": {
+        "type": "object",
+        "required": [
+          "type",
+          "payload"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "VoiceCallPayloadParameter"
+          },
+          "payload": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "OtpParameter": {
+        "type": "object",
+        "required": [
+          "type",
+          "code"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "OtpParameter"
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "UrlNamedParameter": {
+        "type": "object",
+        "required": [
+          "type",
+          "name",
+          "value"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "UrlNamedParameter"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "UrlPositionalParameter": {
+        "type": "object",
+        "required": [
+          "type",
+          "position",
+          "value"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "UrlPositionalParameter"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "CouponCodeParameter": {
+        "type": "object",
+        "required": [
+          "type",
+          "code"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "CouponCodeParameter"
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "QuickReplyPayloadParameter": {
+        "type": "object",
+        "required": [
+          "type",
+          "payload"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "QuickReplyPayloadParameter"
+          },
+          "payload": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "LimitedTimeOfferParameter": {
+        "type": "object",
+        "required": [
+          "type",
+          "expiresAt"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "LimitedTimeOfferParameter"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Offer expiry timestamp. Must be in the future."
+          }
+        },
+        "additionalProperties": false
+      },
+      "CarouselCardParameter": {
+        "type": "object",
+        "required": [
+          "type",
+          "cardIndex",
+          "params"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "CarouselCardParameter"
+          },
+          "cardIndex": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "params": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateParameter"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "TemplateValidationError": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/TemplateParameterError"
+          },
+          {
+            "$ref": "#/components/schemas/TemplateComponentError"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type"
+        }
+      },
+      "TemplateParameterError": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "ParameterError"
+          },
+          "parameterType": {
+            "type": "string"
+          },
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "parameterType",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "TemplateComponentError": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "ComponentError"
+          },
+          "componentType": {
+            "type": "string"
+          },
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "componentType",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "TemplateSendToManyValidationResult": {
+        "type": "object",
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateValidationError"
+            }
+          }
+        },
+        "required": [
+          "errors"
+        ],
+        "additionalProperties": false
+      },
+      "TemplateSendToEachValidationResult": {
+        "type": "object",
+        "description": "Validation errors keyed by recipient phone number. Only recipients with failures are included.",
+        "not": {
+          "required": [
+            "errors"
+          ]
+        },
+        "additionalProperties": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/TemplateValidationError"
+          }
+        }
+      },
+      "TemplateParameterValidationFailure": {
+        "type": "object",
+        "properties": {
+          "desc": {
+            "type": "string",
+            "const": "Template parameter validation failed"
+          },
+          "result": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/TemplateSendToManyValidationResult"
+              },
+              {
+                "$ref": "#/components/schemas/TemplateSendToEachValidationResult"
+              }
+            ]
+          }
+        },
+        "required": [
+          "desc",
+          "result"
+        ],
+        "additionalProperties": false
+      },
+      "WhatsAppOutboundMessageReceipt": {
         "type": "object",
         "description": "Callback payload posted to the receiptRequest.callbackUrl when a message delivery status changes.",
         "properties": {
           "type": {
             "type": "string",
-            "const": "WhatsAppDeliveryReceipt",
-            "description": "Always \"WhatsAppDeliveryReceipt\""
+            "const": "WhatsAppOutboundMessageReceipt",
+            "description": "Always \"WhatsAppOutboundMessageReceipt\""
           },
           "wamId": {
             "type": "string",
-            "description": "WhatsApp message ID assigned by Meta's servers"
+            "description": "WhatsApp message ID assigned by Meta. May be omitted when deliveryStatus is Failed and termination to Meta was not successful."
+          },
+          "correlator": {
+            "type": "string",
+            "description": "Unique ID that correlates with the original message request."
           },
           "phone": {
             "type": "string",
-            "description": "Recipient phone number in E.164 format"
+            "description": "Recipient phone number in E.164 format without the leading +."
           },
           "timestamp": {
             "type": "string",
             "format": "date-time",
-            "description": "ISO 8601 datetime of the status event"
+            "description": "When the status event occurred in UTC."
           },
           "deliveryStatus": {
             "$ref": "#/components/schemas/WhatsAppDeliveryStatus"
           },
           "conversationId": {
             "type": "string",
-            "description": "Meta conversation ID; present once a conversation window is opened"
+            "description": "WhatsApp conversation window ID. Present only for selected non-failed status callbacks."
           },
-          "pricingCategory": {
-            "$ref": "#/components/schemas/WhatsAppPricingCategory"
+          "pricing": {
+            "$ref": "#/components/schemas/WhatsAppPricing"
           },
           "reason": {
             "type": "string",
@@ -1798,7 +2249,7 @@
         },
         "required": [
           "type",
-          "wamId",
+          "correlator",
           "phone",
           "timestamp",
           "deliveryStatus"

@@ -24,9 +24,7 @@
         "groups": [
           {
             "group": "REST API",
-            "pages": [
-              "overview"
-            ]
+            "pages": ["overview"]
           },
           {
             "group": "Authentication",
@@ -37,9 +35,7 @@
           },
           {
             "group": "Services",
-            "pages": [
-              "service/list"
-            ]
+            "pages": ["service/list"]
           },
           {
             "group": "Messaging",
@@ -69,7 +65,8 @@
                   "messaging/whatsapp/send",
                   "messaging/whatsapp/delivery-receipt"
                 ]
-              }
+              },
+              "callbacks/security"
             ]
           },
           {
@@ -82,15 +79,11 @@
           },
           {
             "group": "Bundles",
-            "pages": [
-              "bundle/list"
-            ]
+            "pages": ["bundle/list"]
           },
           {
             "group": "Campaigns",
-            "pages": [
-              "campaign/list"
-            ]
+            "pages": ["campaign/list"]
           }
         ]
       }

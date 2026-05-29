@@ -24,18 +24,31 @@ The API supports two request modes:
 ### Template Parameters
 
 Templates support dynamic parameters that are substituted into the template body or header when messages are sent.
+Before dispatch, parameters are validated against the fetched template. If validation fails, the API returns `400 Bad Request` with a structured result that includes parameter-level and component-level errors.
 
 #### Parameter Types
 
-| Parameter Type              | Required Field | Description                                                            |
-|-----------------------------|----------------|------------------------------------------------------------------------|
-| `BodyNamedParameter`        | `name`         | Substitutes a body placeholder referenced by name (e.g. `{{name}}`)    |
-| `BodyPositionalParameter`   | `position`     | Substitutes a body placeholder referenced by position (e.g. `{{1}}`)   |
-| `HeaderNamedParameter`      | `name`         | Substitutes a header placeholder referenced by name (e.g. `{{name}}`)  |
-| `HeaderPositionalParameter` | `position`     | Substitutes a header placeholder referenced by position (e.g. `{{1}}`) |
+| Parameter Type               | Required Field(s)       | Description                                                                 |
+|------------------------------|-------------------------|-----------------------------------------------------------------------------|
+| `BodyNamedParameter`         | `name`, `value`         | Substitutes a body placeholder referenced by name (e.g. `{{name}}`)         |
+| `BodyPositionalParameter`    | `position`, `value`     | Substitutes a body placeholder referenced by position (e.g. `{{1}}`)        |
+| `HeaderNamedParameter`       | `name`, `value`         | Substitutes a text header placeholder referenced by name (e.g. `{{name}}`)  |
+| `HeaderPositionalParameter`  | `position`, `value`     | Substitutes a text header placeholder referenced by position (e.g. `{{1}}`) |
+| `MediaTemplateParameter`     | `url`                   | Supplies media for an image, video, or document header                      |
+| `LocationTemplateParameter`  | `latitude`, `longitude` | Supplies a location header                                                  |
+| `CopyParameter`              | `value`                 | Supplies text for a copy button                                             |
+| `TimeToLiveParameter`        | `minutes`               | Supplies the expiration window for a time-limited template                  |
+| `VoiceCallPayloadParameter`  | `payload`               | Supplies the payload for a voice call template                              |
+| `OtpParameter`               | `code`                  | Supplies the OTP code                                                       |
+| `UrlNamedParameter`          | `name`, `value`         | Substitutes a URL placeholder referenced by name                            |
+| `UrlPositionalParameter`     | `position`, `value`     | Substitutes a URL placeholder referenced by position                        |
+| `CouponCodeParameter`        | `code`                  | Supplies a coupon code for a coupon button                                  |
+| `QuickReplyPayloadParameter` | `payload`               | Supplies the payload for a quick reply button                               |
+| `LimitedTimeOfferParameter`  | `expiresAt`             | Supplies the expiry timestamp for a limited-time offer                      |
+| `CarouselCardParameter`      | `cardIndex`, `params`   | Supplies parameters for a specific carousel card                            |
 
 ### Example
-
+Body Named parameter and Header Named parameter example:
 ```json
 {
   "params": [
@@ -45,14 +58,21 @@ Templates support dynamic parameters that are substituted into the template body
       "value": "Alice"
     },
     {
-      "type": "BodyPositionalParameter",
-      "position": 1,
-      "value": "Alice"
-    },
-    {
       "type": "HeaderNamedParameter",
       "name": "business",
       "value": "Belio Limited"
+    }
+  ]
+}
+```
+Body Positional parameter and Header Positional parameter example:
+```json
+{
+  "params": [
+    {
+      "type": "BodyPositionalParameter",
+      "position": 1,
+      "value": "Alice"
     },
     {
       "type": "HeaderPositionalParameter",
@@ -61,3 +81,4 @@ Templates support dynamic parameters that are substituted into the template body
     }
   ]
 }
+```
