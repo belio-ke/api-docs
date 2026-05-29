@@ -8,14 +8,14 @@ URL once the message reaches its final state.
 This allows you to monitor the delivery status of your messages in real-time.
 
 <Note>
-    Delivery receipts are sent to the callback URL specified in the
-    `receiptRequest` object of the message request. If you do not include a
-    `receiptRequest`, no delivery receipt will be sent.
+  Delivery receipts are sent to the callback URL specified in the
+  `receiptRequest` object of the message request. If you do not include a
+  `receiptRequest`, no delivery receipt will be sent.
 </Note>
 
 <Note>
-    Ensure that the callback URL is publicly accessible and can handle incoming
-    HTTP POST requests to receive the delivery receipts.
+  Ensure that the callback URL is publicly accessible and can handle incoming
+  HTTP POST requests to receive the delivery receipts.
 </Note>
 
 ### Delivery Receipt Format
@@ -24,7 +24,7 @@ This allows you to monitor the delivery status of your messages in real-time.
 {
   "type": "WhatsAppDeliveryReceipt",
   "wamId": "wamid.HBgLMjU0NzAwMTExMjEzFQIAERgSM...",
-  "phone": "254700111213",
+  "phone": "+254700111213",
   "timestamp": "2026-04-29T14:32:00+03:00",
   "deliveryStatus": "Delivered",
   "conversationId": "conv-abc123",
@@ -35,7 +35,7 @@ This allows you to monitor the delivery status of your messages in real-time.
 ```
 
 | Field           | Type   | Always present | Description                                                              |
-|-----------------|--------|----------------|--------------------------------------------------------------------------|
+| --------------- | ------ | -------------- | ------------------------------------------------------------------------ |
 | type            | string | Yes            | Always `WhatsAppDeliveryReceipt`                                         |
 | wamId           | string | Yes            | WhatsApp message ID assigned by Meta's servers                           |
 | phone           | string | Yes            | Recipient phone number in E.164 format                                   |
@@ -49,7 +49,7 @@ This allows you to monitor the delivery status of your messages in real-time.
 ### Delivery Statuses
 
 | Value     | WhatsApp UI equivalent | Description                                                                                |
-|-----------|------------------------|--------------------------------------------------------------------------------------------|
+| --------- | ---------------------- | ------------------------------------------------------------------------------------------ |
 | Waiting   | Clock                  | Message is queued and waiting to be sent to the recipient's device (default initial state) |
 | Sent      | Single checkmark       | Message was sent from WhatsApp servers to the recipient                                    |
 | Delivered | Two checkmarks         | Message was successfully delivered to the recipient's device                               |
@@ -63,7 +63,7 @@ WhatsApp Business charges per conversation, categorized by the nature of the mes
 delivery receipts and the `units` map in the send response both use these values.
 
 | Value                       | Description                                                                                                      |
-|-----------------------------|------------------------------------------------------------------------------------------------------------------|
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | Authentication              | Sent as part of an authentication flow (e.g. OTP). Authentication rate applies                                   |
 | AuthenticationInternational | Authentication message sent to an international (non-domestic) number. International authentication rate applies |
 | Marketing                   | Promotional or marketing content. Marketing rate applies                                                         |
@@ -84,13 +84,13 @@ It must be included in the WhatsApp message request body when sending a message 
 }
 ```
 
-| Field       | Type   | Constraints                                                                                                  |
-|-------------|--------|--------------------------------------------------------------------------------------------------------------|
-| correlator  | string | Non-empty, maximum 100 characters. Used to correlate callbacks to the originating request. Recommended: UUID |
-| callbackUrl | string | Valid `https://` or `http://` URL. The endpoint must not require authentication                              |
+| Field       | Type   | Constraints                                                                                                      |
+| ----------- | ------ | ---------------------------------------------------------------------------------------------------------------- |
+| correlator  | string | Non-empty, maximum 100 characters. Used to correlate callbacks to the originating request (we recommend `UUID`). |
+| callbackUrl | string | Valid `https://` or `http://` URL. The endpoint must not require authentication                                  |
 
 <Warning>
-    When provided, **both fields are required**. An invalid `receiptRequest` causes the entire request to be
-    rejected with
-    `400 Bad Request` before any messages are dispatched.
+  When provided, **both fields are required**. An invalid `receiptRequest`
+  causes the entire request to be rejected with `400 Bad Request` before any
+  messages are dispatched.
 </Warning>
