@@ -7,12 +7,13 @@ When a request includes `receiptRequest`, the platform sends HTTP `POST` request
 `callbackUrl` with `Content-Type: application/json`.
 
 <Note>
-  The callback body is a JSON object with a `type` discriminator. WhatsApp outbound status callbacks use
-  `WhatsAppOutboundMessageReceipt`.
+  The callback body is a JSON object with a `type` discriminator. WhatsApp
+  outbound status callbacks use `WhatsAppOutboundMessageReceipt`.
 </Note>
 
 <Note>
-  Ensure that the callback URL is publicly accessible and can handle unauthenticated HTTP POST requests.
+  Ensure that the callback URL is publicly accessible and can handle
+  unauthenticated HTTP POST requests.
 </Note>
 
 ### WhatsAppOutboundMessageReceipt
@@ -25,9 +26,12 @@ callbacks in sequence: `Sent`, `Delivered`, then `Read` or `Played` for voice me
 ```json
 {
   "type": "WhatsAppOutboundMessageReceipt",
+  "wabaId": "102290129340398",
+  "phoneNumberId": "106540352242922",
   "wamId": "wamid.HBgLMTY1MDM4Nzk0MzkVAgASGBQzQUFERjg0NDEzNDdFODU3MUMxMAA=",
   "correlator": "8f24c8c6-7e7c-4b6f-a622-d4a25f91d3c1",
-  "phone": "+254700111213",
+  "sender": "15550783881",
+  "recipient": "254700111213",
   "timestamp": "2025-05-11T10:31:13Z",
   "deliveryStatus": "Delivered",
   "conversationId": "8f842dbba350821654c9dfed31f5635c",
@@ -43,9 +47,12 @@ callbacks in sequence: `Sent`, `Delivered`, then `Read` or `Played` for voice me
 ```json
 {
   "type": "WhatsAppOutboundMessageReceipt",
+  "wabaId": "102290129340398",
+  "phoneNumberId": "106540352242922",
   "wamId": "wamid.HBgLMTY1MDM4Nzk0MzkVAgARGBI0QUQ2MjA4NEYyRkExNjMyREUA",
   "correlator": "8f24c8c6-7e7c-4b6f-a622-d4a25f91d3c1",
-  "phone": "254700111213",
+  "sender": "15550783881",
+  "recipient": "254700111213",
   "timestamp": "2025-05-11T10:35:00Z",
   "deliveryStatus": "Failed",
   "reason": "This message was not delivered to maintain healthy ecosystem engagement.",
@@ -56,11 +63,14 @@ callbacks in sequence: `Sent`, `Delivered`, then `Read` or `Played` for voice me
 ### Fields
 
 | Field            | Type   | Always present | Description                                                                                                                                                                   |
-|------------------|--------|----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ---------------- | ------ | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `type`           | string | Yes            | Always `WhatsAppOutboundMessageReceipt`                                                                                                                                       |
+| `wabaId`         | string | Yes            | Your WhatsApp Business Account ID.                                                                                                                                            |
+| `phoneNumberId`  | string | Yes            | WhatsApp Business Account Phone Number ID through which the message was sent.                                                                                                 |
 | `wamId`          | string | No             | WhatsApp message ID assigned by Meta. May be omitted for `Failed` when termination to Meta was not successful.                                                                |
 | `correlator`     | string | Yes            | Unique ID that correlates with your original message request.                                                                                                                 |
-| `phone`          | string | Yes            | Recipient phone number in E.164 format with the leading `+`.                                                                                                                  |
+| `sender`         | string | Yes            | Sender phone number (Business).                                                                                                                                               |
+| `recipient`      | string | Yes            | Recipient phone number (User).                                                                                                                                                |
 | `timestamp`      | string | Yes            | ISO 8601 timestamp for when the status event occurred, in UTC.                                                                                                                |
 | `deliveryStatus` | string | Yes            | Current delivery state. See [Delivery Status](#delivery-status-values) values.                                                                                                |
 | `conversationId` | string | No             | WhatsApp conversation window ID. Present with `Sent` and with one of either `Delivered` or `Read`. Omitted unless the conversation used a free entry point.                   |
@@ -71,7 +81,7 @@ callbacks in sequence: `Sent`, `Delivered`, then `Read` or `Played` for voice me
 ### Delivery Status Values
 
 | Value       | WhatsApp UI         | Meaning                                                                        |
-|-------------|---------------------|--------------------------------------------------------------------------------|
+| ----------- | ------------------- | ------------------------------------------------------------------------------ |
 | `Waiting`   | Clock icon          | Message is being processed and has not yet been sent to the recipient's device |
 | `Sent`      | Single checkmark    | Message sent from Meta's servers to the recipient                              |
 | `Delivered` | Two checkmarks      | Message delivered to the recipient's device                                    |
@@ -83,7 +93,7 @@ callbacks in sequence: `Sent`, `Delivered`, then `Read` or `Played` for voice me
 ### Pricing Type Values
 
 | Value                 | Description                                                                                                                     |
-|-----------------------|---------------------------------------------------------------------------------------------------------------------------------|
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | `Regular`             | Message is billable.                                                                                                            |
 | `FreeCustomerService` | Message is free because it was either a utility template message or non-template message sent within a customer service window. |
 | `FreeEntryPoint`      | Message is free because it was sent within an open free entry point window.                                                     |
@@ -91,7 +101,7 @@ callbacks in sequence: `Sent`, `Delivered`, then `Read` or `Played` for voice me
 ### Pricing Category Values
 
 | Value                         | Description                                         |
-|-------------------------------|-----------------------------------------------------|
+| ----------------------------- | --------------------------------------------------- |
 | `Authentication`              | Authentication message                              |
 | `AuthenticationInternational` | Authentication message billed at international rate |
 | `Marketing`                   | Marketing message                                   |
@@ -117,8 +127,9 @@ POST /your-callback  ->  deliveryStatus: "Failed"     (reason and reasonCode pre
 ```
 
 <Note>
-    If a message is delivered and read at the same time, for example when the recipient has the chat open,
-    the `Delivered` callback is skipped and only `Read` is sent.
+  If a message is delivered and read at the same time, for example when the
+  recipient has the chat open, the `Delivered` callback is skipped and only
+  `Read` is sent.
 </Note>
 
 ### Receipt Request
@@ -134,12 +145,12 @@ It must be included in the WhatsApp message request body when sending a message 
 ```
 
 | Field         | Type   | Constraints                                                                                                     |
-|---------------|--------|-----------------------------------------------------------------------------------------------------------------|
+| ------------- | ------ | --------------------------------------------------------------------------------------------------------------- |
 | `correlator`  | string | Non-empty, maximum 100 characters. Used to correlate callbacks to the originating request. Recommended: `UUID`. |
 | `callbackUrl` | string | Valid `https://` or `http://` URL. The endpoint must not require authentication.                                |
 
 <Warning>
-  When provided, both fields are required. An invalid `receiptRequest`
-  causes the entire request to be rejected with `400 Bad Request` before any
-  messages are dispatched.
+  When provided, both fields are required. An invalid `receiptRequest` causes
+  the entire request to be rejected with `400 Bad Request` before any messages
+  are dispatched.
 </Warning>
