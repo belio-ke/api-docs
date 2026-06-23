@@ -7,73 +7,50 @@ When a request includes `receiptRequest`, the platform sends HTTP `POST` request
 `callbackUrl` with `Content-Type: application/json`.
 
 <Note>
-  The callback body is a JSON object with a `type` discriminator. WhatsApp
-  outbound status callbacks use `WhatsAppOutboundMessageReceipt`.
-</Note>
-
-<Note>
   Ensure that the callback URL is publicly accessible and can handle
   unauthenticated HTTP POST requests.
 </Note>
 
-### WhatsAppOutboundMessageReceipt
+### Receipt Request
+
+An optional object on send requests that enables delivery status callbacks.
+It must be included in the WhatsApp message request body when sending a message to receive delivery receipts for that message.
+
+```json
+{
+  "correlator": "12345678-1234-5678-1234-567812345678",
+  "callbackUrl": "https://acme.org/whatsapp/delivery-reports"
+}
+```
+
+| Field         | Type   | Constraints                                                                                                    |
+| ------------- | ------ | -------------------------------------------------------------------------------------------------------------- |
+| `correlator`  | string | Non-empty, maximum 100 characters. Used to correlate callbacks to the originating request. `UUID` recommended. |
+| `callbackUrl` | string | Valid `https://` or `http://` URL. The endpoint must not require authentication.                               |
+
+<Warning>
+  When provided, both fields are required. An invalid `receiptRequest` causes
+  the entire request to be rejected with `400 Bad Request` before any messages
+  are dispatched.
+</Warning>
+
+### Outbound Receipts
 
 Sent when the delivery status of a message you sent to a user changes. A single sent message can produce multiple
 callbacks in sequence: `Sent`, `Delivered`, then `Read` or `Played` for voice messages. A failed message produces a `Failed` callback.
-
-#### Example: Delivered
-
-```json
-{
-  "type": "WhatsAppOutboundMessageReceipt",
-  "wabaId": "102290129340398",
-  "phoneNumberId": "106540352242922",
-  "wamId": "wamid.HBgLMTY1MDM4Nzk0MzkVAgASGBQzQUFERjg0NDEzNDdFODU3MUMxMAA=",
-  "correlator": "8f24c8c6-7e7c-4b6f-a622-d4a25f91d3c1",
-  "sender": "15550783881",
-  "recipient": "254700111213",
-  "timestamp": "2025-05-11T10:31:13Z",
-  "deliveryStatus": "Delivered",
-  "conversationId": "8f842dbba350821654c9dfed31f5635c",
-  "pricing": {
-    "type": "Regular",
-    "category": "Marketing"
-  }
-}
-```
-
-#### Example: Failed
-
-```json
-{
-  "type": "WhatsAppOutboundMessageReceipt",
-  "wabaId": "102290129340398",
-  "phoneNumberId": "106540352242922",
-  "wamId": "wamid.HBgLMTY1MDM4Nzk0MzkVAgARGBI0QUQ2MjA4NEYyRkExNjMyREUA",
-  "correlator": "8f24c8c6-7e7c-4b6f-a622-d4a25f91d3c1",
-  "sender": "15550783881",
-  "recipient": "254700111213",
-  "timestamp": "2025-05-11T10:35:00Z",
-  "deliveryStatus": "Failed",
-  "reason": "This message was not delivered to maintain healthy ecosystem engagement.",
-  "reasonCode": "131049"
-}
-```
 
 ### Fields
 
 | Field            | Type   | Always present | Description                                                                                                                                                                   |
 | ---------------- | ------ | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `type`           | string | Yes            | Always `WhatsAppOutboundMessageReceipt`                                                                                                                                       |
-| `wabaId`         | string | Yes            | Your WhatsApp Business Account ID.                                                                                                                                            |
-| `phoneNumberId`  | string | Yes            | WhatsApp Business Account Phone Number ID through which the message was sent.                                                                                                 |
-| `wamId`          | string | No             | WhatsApp message ID assigned by Meta. May be omitted for `Failed` when termination to Meta was not successful.                                                                |
-| `correlator`     | string | Yes            | Unique ID that correlates with your original message request.                                                                                                                 |
-| `sender`         | string | Yes            | Sender phone number (Business).                                                                                                                                               |
-| `recipient`      | string | Yes            | Recipient phone number (User).                                                                                                                                                |
+| `wabaId`         | string | Yes            | WhatsApp Business Account ID.                                                                                                                                                 |
+| `phoneNumberId`  | string | Yes            | WhatsApp Business Account Phone Number ID.                                                                                                                                    |
+| `wamId`          | string | No             | WhatsApp message ID assigned by Meta. Omitted for `Failed` status when termination to Meta was not successful.                                                                |
+| `correlator`     | string | Yes            | Unique ID that correlates with the original message request.                                                                                                                  |
+| `phone`          | string | Yes            | Recipient's phone number.                                                                                                                                                     |
 | `timestamp`      | string | Yes            | ISO 8601 timestamp for when the status event occurred, in UTC.                                                                                                                |
 | `deliveryStatus` | string | Yes            | Current delivery state. See [Delivery Status](#delivery-status-values) values.                                                                                                |
-| `conversationId` | string | No             | WhatsApp conversation window ID. Present with `Sent` and with one of either `Delivered` or `Read`. Omitted unless the conversation used a free entry point.                   |
 | `pricing`        | object | No             | [Pricing type](#pricing-type-values) and [category](#pricing-category-values). Present on `Sent` and on one of either `Delivered` or `Read`, not both, and never on `Failed`. |
 | `reason`         | string | No             | Human-readable error description. Only present when `deliveryStatus` is `Failed`.                                                                                             |
 | `reasonCode`     | string | No             | Numeric error code as a string. Only present when `deliveryStatus` is `Failed`.                                                                                               |
@@ -92,11 +69,11 @@ callbacks in sequence: `Sent`, `Delivered`, then `Read` or `Played` for voice me
 
 ### Pricing Type Values
 
-| Value                 | Description                                                                                                                     |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `Regular`             | Message is billable.                                                                                                            |
-| `FreeCustomerService` | Message is free because it was either a utility template message or non-template message sent within a customer service window. |
-| `FreeEntryPoint`      | Message is free because it was sent within an open free entry point window.                                                     |
+| Value                 | Description                                                                                                                                                                                                                                                                                                 |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Regular`             | Message is billable.                                                                                                                                                                                                                                                                                        |
+| `FreeCustomerService` | Message is free because it was either a utility template message or non-template message sent within a customer service window (A 24-hour window opened when a WhatsApp user messages or calls your Business. Each new message or call from the user resets the window, extending it for another 24 hours). |
+| `FreeEntryPoint`      | Message is free because it was sent within an open free entry point window (A 72-hr window opened when a WhatsApp user starts a conversation through click-to-WhatsApp ads or Facebook Page call-to-action buttons).                                                                                        |
 
 ### Pricing Category Values
 
@@ -110,20 +87,71 @@ callbacks in sequence: `Sent`, `Delivered`, then `Read` or `Played` for voice me
 | `Service`                     | Service message                                     |
 | `Utility`                     | Utility message                                     |
 
-### Callback Sequence
+#### Examples
 
-A successfully delivered message produces sequential `WhatsAppOutboundMessageReceipt` callbacks:
+- Delivered
 
-```text
-POST /your-callback  ->  deliveryStatus: "Sent"       (pricing present)
-POST /your-callback  ->  deliveryStatus: "Delivered"  (pricing may be present)
-POST /your-callback  ->  deliveryStatus: "Read"       (pricing present if not already sent with "Delivered")
+```json
+{
+  "type": "WhatsAppOutboundMessageReceipt",
+  "wabaId": "102290129340398",
+  "phoneNumberId": "106540352242922",
+  "wamId": "wamid.HBgLMTY1MDM4Nzk0MzkVAgASGBQzQUFERjg0NDEzNDdFODU3MUMxMAA=",
+  "correlator": "8f24c8c6-7e7c-4b6f-a622-d4a25f91d3c1",
+  "phone": "254700111213",
+  "timestamp": "2025-05-11T10:31:13Z",
+  "deliveryStatus": "Delivered",
+  "pricing": {
+    "type": "Regular",
+    "category": "Marketing"
+  }
+}
 ```
 
-A failed message produces a single callback:
+- Failed
 
-```text
-POST /your-callback  ->  deliveryStatus: "Failed"     (reason and reasonCode present)
+```json
+{
+  "type": "WhatsAppOutboundMessageReceipt",
+  "wabaId": "102290129340398",
+  "phoneNumberId": "106540352242922",
+  "wamId": "wamid.HBgLMTY1MDM4Nzk0MzkVAgARGBI0QUQ2MjA4NEYyRkExNjMyREUA",
+  "correlator": "8f24c8c6-7e7c-4b6f-a622-d4a25f91d3c1",
+  "phone": "254700111213",
+  "timestamp": "2025-05-11T10:35:00Z",
+  "deliveryStatus": "Failed",
+  "reason": "This message was not delivered to maintain healthy ecosystem engagement.",
+  "reasonCode": "131049"
+}
+```
+
+### Callback Sequence
+
+Each `deliveryStatus` transition triggers an HTTP `POST` to your `callbackUrl`.
+
+**Successful delivery** — up to three callbacks in order (`Sent` → `Delivered` → `Read`):
+
+```mermaid
+stateDiagram-v2
+
+    state "Sent<br/>(pricing present)" as Sent
+    state "Delivered<br/>(pricing may be present)" as Delivered
+    state "Read<br/>(pricing present if not sent with Delivered)" as Read
+
+    [*] --> Sent
+    Sent --> Delivered
+    Delivered --> Read
+    Sent --> Read: Delivered skipped
+```
+
+**Failed delivery** — a single terminal callback:
+
+```mermaid
+stateDiagram-v2
+
+    state "Failed<br/>(reason and reasonCode present)" as Failed
+
+    [*] --> Failed
 ```
 
 <Note>
@@ -131,26 +159,3 @@ POST /your-callback  ->  deliveryStatus: "Failed"     (reason and reasonCode pre
   recipient has the chat open, the `Delivered` callback is skipped and only
   `Read` is sent.
 </Note>
-
-### Receipt Request
-
-An optional object on send requests that enables delivery status callbacks.
-It must be included in the WhatsApp message request body when sending a message to receive delivery receipts for that message.
-
-```json
-{
-  "correlator": "12345678-1234-5678-1234-567812345678",
-  "callbackUrl": "https://acme.org/whatsapp/delivery-reports"
-}
-```
-
-| Field         | Type   | Constraints                                                                                                     |
-| ------------- | ------ | --------------------------------------------------------------------------------------------------------------- |
-| `correlator`  | string | Non-empty, maximum 100 characters. Used to correlate callbacks to the originating request. Recommended: `UUID`. |
-| `callbackUrl` | string | Valid `https://` or `http://` URL. The endpoint must not require authentication.                                |
-
-<Warning>
-  When provided, both fields are required. An invalid `receiptRequest` causes
-  the entire request to be rejected with `400 Bad Request` before any messages
-  are dispatched.
-</Warning>
