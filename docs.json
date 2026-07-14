@@ -70,6 +70,10 @@
             ]
           },
           {
+            "group": "USSD",
+            "pages": ["ussd/introduction", "ussd/service-callback"]
+          },
+          {
             "group": "Mobile Data",
             "pages": [
               "mobile-data/introduction",
