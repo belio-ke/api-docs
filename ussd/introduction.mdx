@@ -2,6 +2,9 @@
 title: "Introduction"
 ---
 
+Belio USSD lets your application respond to subscriber interactions in real time.
+When a user dials a registered shortcode, Belio forwards the session state to your callback URL and expects the next screen in return.
+
 ```mermaid
 sequenceDiagram
     participant S as Subscriber
@@ -13,9 +16,6 @@ sequenceDiagram
     A-->>B: Return next USSD screen
     B-->>S: Display response
 ```
-
-Belio USSD lets your application respond to subscriber interactions in real time.
-When a user dials a registered shortcode, Belio forwards the session state to your callback URL and expects the next screen in return.
 
 ## How It Works
 

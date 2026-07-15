@@ -24,7 +24,9 @@
         "groups": [
           {
             "group": "REST API",
-            "pages": ["overview"]
+            "pages": [
+              "overview"
+            ]
           },
           {
             "group": "Authentication",
@@ -35,7 +37,9 @@
           },
           {
             "group": "Services",
-            "pages": ["service/list"]
+            "pages": [
+              "service/list"
+            ]
           },
           {
             "group": "Messaging",
@@ -71,7 +75,11 @@
           },
           {
             "group": "USSD",
-            "pages": ["ussd/introduction", "ussd/service-callback"]
+            "pages": [
+              "ussd/introduction",
+              "ussd/session-flow",
+              "ussd/belio-eats"
+            ]
           },
           {
             "group": "Mobile Data",
@@ -83,11 +91,15 @@
           },
           {
             "group": "Bundles",
-            "pages": ["bundle/list"]
+            "pages": [
+              "bundle/list"
+            ]
           },
           {
             "group": "Campaigns",
-            "pages": ["campaign/list"]
+            "pages": [
+              "campaign/list"
+            ]
           }
         ]
       }
