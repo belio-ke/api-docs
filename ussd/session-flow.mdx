@@ -1,8 +1,9 @@
 ---
-title: "Service Callback"
+title: "Session Flow"
 ---
+Every USSD session is a series of request-response interactions between the subscriber, Belio, and your application. Each time the subscriber enters a menu option, Belio sends a new `POST` request to your callback endpoint containing the complete input history for the current session. Your application processes the request and returns the next screen to display (`CON`) or ends the session (`END`).
 
-## Session Flow
+The diagram below illustrates a typical USSD session from the initial dial through multiple menu selections until the session is completed.
 
 ```mermaid
 sequenceDiagram
@@ -59,7 +60,9 @@ Belio sends the full input history on every request, not just the latest keystro
 - Re-process all inputs from scratch on each request, or use `sessionId` to load session state and determine which input is new.
 
 #### Sample expected responses from your application
-- Continue the session and show the next menu screen:
+- Continue the session and show the next menu screen.
+This response tells Belio to keep the session open and show the subscriber the next menu screen.
+
 ```json
 {
   "message": "Choose a category:\n\n1. Food\n2. Drinks\n0. Back",
@@ -73,7 +76,6 @@ Belio sends the full input history on every request, not just the latest keystro
   "action": "END"
 }
 ```
-This response tells Belio to keep the session open and show the subscriber the next menu screen.
 
 ## Callback Endpoint
 
