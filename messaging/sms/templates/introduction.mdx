@@ -1,0 +1,24 @@
+SMS templates are pre-approved message formats that let you send structured, reliable messages by referencing a template instead of composing raw text. Template content uses `{{placeholder}}` syntax, and placeholders may be named (e.g. `{{name}}`) or positional (e.g. `{{1}}`).
+
+SMS templates are categorized into three types:
+1. **Marketing** (`MARKETING`): Promotional messages, special offers, and event announcements.
+2. **Utility** (`UTILITY`): Transactional information such as order confirmations, appointment reminders, and account updates.
+3. **Authentication** (`AUTHENTICATION`): Verification codes and one-time passwords.
+
+### Belio-managed Senders and Approval
+
+When creating a template, you can optionally link it to a Belio-managed sender (e.g. Belio OTP).
+
+- If you don't link a managed sender, the template is ready to use immediately on your own Alphanumeric Sender.
+- If you link a managed sender, the template must be reviewed and approved by Belio before it can be sent. During review, Belio checks that the template's category matches the linked managed service's category, along with other requirements.
+
+Belio also provides pre-approved templates ready to use immediately. These are not exclusive to Belio-managed senders and can be used with any sender type.
+
+### Important Notes
+
+<Note>
+    <b>Important</b>
+    * Templates linked to a Belio-managed sender must be **approved** before they can be sent
+    * Templates without a linked managed sender are usable **immediately** on your Alphanumeric Sender
+    * Templates must be in a **sendable state** (`status: Active`, `approvalStatus: APPROVED`)
+</Note>
