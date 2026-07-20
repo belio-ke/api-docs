@@ -1,0 +1,16 @@
+---
+title: "Create Template"
+---
+
+SMS templates are created through the Belio Cloud Portal. There is no API for template creation.
+
+1. Log in to the [Belio Cloud Portal](https://cloud.belio.co.ke) and open **Message templates** from the sidebar, or go directly to the [Message templates](https://cloud.belio.co.ke/messaging/templates) page.
+2. Click to create a new template and fill in the form:
+- **Share with the team** — when on, everyone on your team can find and use this template. When off, it stays private to you.
+- **Category** (required) — `Marketing`, `Utility`, or `Authentication`.
+- **Tags** (optional) — makes the template easier to find later.
+- **Description** (required) — a short description of the template's purpose.
+- **Message** (required) — the template content, up to 960 characters. Wrap words in double curly braces to mark them as placeholders, e.g. `{{name}}`, `{{orderId}}`, or `{{1}}`. You can also use the **Add placeholder** button to insert one.
+3. Optionally, under **Belio-managed sender**, link the template to an approved Belio-managed service (e.g. Belio OTP) if your team has one.
+
+If you link a Belio-managed sender, custom templates using it must be reviewed and approved by Belio before they can be sent. See [Belio-managed Senders and Approval](/messaging/sms/templates/introduction#belio-managed-senders-and-approval).

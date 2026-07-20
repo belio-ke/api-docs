@@ -1,0 +1,32 @@
+---
+title: "View Templates"
+---
+
+SMS templates can be viewed and managed from the Belio Cloud Portal.
+
+Log in to the [Belio Cloud Portal](https://cloud.belio.co.ke) and open **Message templates** from the sidebar, or go directly to the [Message templates](https://cloud.belio.co.ke/messaging/templates) page. From there you can view all your templates, inspect their content and placeholders, and check their approval status.
+
+A template has two independent status fields: `status` (whether the user has archived it) and `approvalStatus` (Belio's review lifecycle).
+
+### Status
+
+Controlled by you. Indicates whether the template is archived.
+
+| Status     | Description                                                                                    |
+| ---------- | --------------------------------------------------------------------------------------------- |
+| `Active`   | Template is active and can be used (subject to approval status if linked to a managed sender)  |
+| `Archived` | Template has been archived by the user and cannot be used until unarchived                     |
+
+### Approval Status
+
+Belio's review lifecycle for the template. This only meaningfully progresses through review states when the template is linked to a Belio-managed sender. Unlinked templates are usable immediately (see [Belio-managed Senders and Approval](/messaging/sms/templates/introduction#belio-managed-senders-and-approval)).
+
+| Approval Status | Description                                                          |
+| --------------- | ------------------------------------------------------------------- |
+| `PENDING`       | Template is under review by Belio (applicable to templates linked to a managed sender) |
+| `APPROVED`      | Template is approved and can be used for sending messages            |
+| `REJECTED`      | Template was rejected and cannot be used                            |
+
+<Tip>
+    Only templates with `status: Active` and, if linked to a managed sender, `approvalStatus: APPROVED`, can be used for sending.
+</Tip>
