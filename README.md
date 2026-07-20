@@ -21,8 +21,19 @@ Belio's REST API enables developers to:
 - Node.js and npm installed
 - Mintlify CLI for local development
 
-### Setup
+### Local Setup
 
+#### Run on Docker
+
+```shell
+# Build the docker image
+docker build -t docs-local:1.0 .
+# Run the docker image
+docker run -it -p 3000:3000 docs-local:1.0
+```
+Access preview at http://localhost:3000
+
+#### Run locally
 1. Install the Mintlify CLI:
 
 ```bash
