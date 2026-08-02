@@ -1,0 +1,59 @@
+---
+title: "Template Parameters"
+---
+
+Template parameters supply the values for placeholders in the template content. Every parameter is a JSON object with exactly two fields and has no `type` discriminator on SMS parameters (unlike WhatsApp template parameters):
+
+| Field   | Description                                                                   |
+| ------- | ----------------------------------------------------------------------------- |
+| `name`  | Placeholder name that must match a `{{name}}` placeholder in the template content |
+| `value` | Substitution value inserted into the template                                 |
+
+```json
+{ "name": "code", "value": "654321" }
+```
+
+## Placeholders
+
+Template content uses double-brace placeholders, which can be **named** (`{{sample}}`, `{{code}}`) or **positional** (`{{1}}`, `{{2}}`). In a request, supply a parameter whose `name` matches the placeholder identifier. For a positional placeholder `{{1}}`, use `"name": "1"`. At send time the API replaces each placeholder with the corresponding parameter value, or with the parameter definition's default when one is omitted.
+
+## Parameter definitions
+
+Each template carries parameter definitions that govern validation. These are configured when the template is created:
+
+```json
+{
+  "name": "code",
+  "format": "Numeric",
+  "required": true,
+  "maxLength": 6,
+  "default": "123456"
+}
+```
+
+| Field       | Type    | Default       | Description                                                        |
+| ----------- | ------- | ------------- | ----------------------------------------------------------------- |
+| `name`      | string  | —             | Parameter name; must match a placeholder in template content      |
+| `format`    | string  | `"PlainText"` | Value format constraint                                           |
+| `required`  | boolean | `true`        | Whether the client must supply the parameter                     |
+| `maxLength` | integer | —             | Maximum allowed length of the value (optional)                    |
+| `default`   | string  | —             | Default value used when the client omits the parameter (optional) |
+
+## Parameter formats
+
+The `format` on a parameter definition restricts what characters are allowed in the value:
+
+| Format         | Allowed values                                                  | Typical use                                 |
+| -------------- | --------------------------------------------------------------- | ------------------------------------------- |
+| `PlainText`    | Printable characters, except `{`, `}`, and control characters   | General short text (product names)          |
+| `Alphanumeric` | Letters and digits only (A–Z, a–z, 0–9)                         | Reference codes, tokens without punctuation |
+| `Numeric`      | Digits only (0–9)                                               | OTPs, PINs, numeric identifiers             |
+| `Name`         | Unicode letters, spaces, hyphens, apostrophes (`^[\p{L}\s'-]+$`) | First names, surnames, display names        |
+
+## Required vs optional parameters
+
+For each placeholder in the template content:
+
+- If you **provide** the parameter in `params`, it is validated against the definition.
+- If you **omit** it and the definition has a `default`, the default is used automatically.
+- If you **omit** it and there is no `default`, the request is rejected with `Missing required parameter '{name}'`.

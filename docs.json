@@ -49,12 +49,12 @@
                     "group": "Templates",
                     "pages": [
                       "messaging/sms/templates/introduction",
+                      "messaging/sms/templates/parameters",
                       "messaging/sms/templates/create-template",
                       "messaging/sms/templates/view-templates"
                     ]
                   },
                   "messaging/sms/send",
-                  "messaging/sms/send-templates",
                   "messaging/sms/delivery-receipt"
                 ]
               },

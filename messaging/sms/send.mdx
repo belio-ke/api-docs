@@ -16,9 +16,214 @@ This endpoint is rate limited to **400** messages per second.
 
 ## Request Modes
 
-The API supports two request modes:
+The required `type` field selects one of four request modes. **Free-form** modes
+compose raw message text; **template** modes send a pre-approved template by
+referencing its `templateId` (see [SMS Templates](/messaging/sms/templates/introduction)).
 
-- `SendToMany` — same message is sent to multiple recipients
-- `SendToEach` — message is sent to individual recipients.(Messages can be tailored for each recipient)
+| `type`               | Kind      | Description                                            |
+| -------------------- | --------- | ----------------------------------------------------- |
+| `SendToMany`         | Free-form | Same message sent to multiple recipients              |
+| `SendToEach`         | Free-form | Message tailored per recipient                        |
+| `TemplateSendToMany` | Template  | One shared parameter set sent to multiple recipients  |
+| `TemplateSendToEach` | Template  | Each recipient receives their own parameter values    |
 
-Both modes support a maximum of **100** recipients per request and a **960** character limit for each message.
+### Limits
+
+| Rule                        | Free-form (`SendToMany` / `SendToEach`) | Template (`TemplateSendToMany` / `TemplateSendToEach`) |
+| --------------------------- | --------------------------------------- | ------------------------------------------------------ |
+| Maximum recipients per request | **100**                              | **10**                                                 |
+| Maximum message length      | **960** characters                      | **960** characters (after parameters are resolved)     |
+| SMS message unit size       | **160** characters                      | **160** characters                                     |
+
+## Free-form Modes
+
+- `SendToMany` — the same message is sent to multiple recipients.
+- `SendToEach` — the message is sent to individual recipients and can be tailored per recipient.
+
+Use the interactive playground above to build and try free-form requests.
+
+## Template Modes
+
+Template requests reference an approved template by `templateId` and supply
+[Template Parameters](/messaging/sms/templates/parameters) for its placeholders.
+
+<Warning>
+    After all parameters are substituted, the final message must not exceed **960
+    characters**. A longer resolved message is rejected with `Resolved content
+    cannot be longer than 960 characters`. There is no truncation or fallback.
+</Warning>
+
+### TemplateSendToMany
+
+Send the same resolved template message to multiple phone numbers.
+
+| Field            | Type     | Required | Description                            |
+| ---------------- | -------- | -------- | -------------------------------------- |
+| `type`           | string   | yes      | Must be `"TemplateSendToMany"`         |
+| `templateId`     | string   | yes      | ID of the SMS template                 |
+| `addresses`      | string[] | yes      | Recipient phone numbers (**1–10**)     |
+| `params`         | object[] | yes      | [Template parameter](/messaging/sms/templates/parameters) values |
+| `receiptRequest` | object   | no       | Optional delivery receipt callback     |
+
+```bash
+curl --request POST \
+  --url https://api.belio.co.ke/message/{serviceId} \
+  --header 'Authorization: Bearer <token>' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "type": "TemplateSendToMany",
+    "templateId": "tpl-sms-001",
+    "addresses": [
+      "+254700111213",
+      "254750108109"
+    ],
+    "params": [
+      { "name": "sample", "value": "Alice" },
+      { "name": "code", "value": "654321" }
+    ],
+    "receiptRequest": {
+      "correlator": "otp-batch-001",
+      "callbackUrl": "https://example.com/dlr"
+    }
+  }'
+```
+
+### TemplateSendToEach
+
+Send the same template to multiple recipients, each with their own parameter values.
+
+| Field            | Type     | Required | Description                        |
+| ---------------- | -------- | -------- | ---------------------------------- |
+| `type`           | string   | yes      | Must be `"TemplateSendToEach"`     |
+| `templateId`     | string   | yes      | ID of the SMS template             |
+| `messages`       | object[] | yes      | Per-recipient entries (**1–10**)   |
+| `receiptRequest` | object   | no       | Optional delivery receipt callback |
+
+Each item in `messages`:
+
+| Field    | Type     | Required | Description                            |
+| -------- | -------- | -------- | -------------------------------------- |
+| `phone`  | string   | yes      | Recipient phone number                 |
+| `params` | object[] | yes      | [Template parameters](/messaging/sms/templates/parameters) for this recipient |
+
+```bash
+curl --request POST \
+  --url https://api.belio.co.ke/message/{serviceId} \
+  --header 'Authorization: Bearer <token>' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "type": "TemplateSendToEach",
+    "templateId": "tpl-sms-001",
+    "messages": [
+      {
+        "phone": "254700111213",
+        "params": [
+          { "name": "sample", "value": "Alice" },
+          { "name": "code", "value": "111111" }
+        ]
+      },
+      {
+        "phone": "254700111214",
+        "params": [
+          { "name": "sample", "value": "Bob" },
+          { "name": "code", "value": "222222" }
+        ]
+      }
+    ]
+  }'
+```
+
+## Errors
+
+### General errors
+
+| HTTP | Condition                  | Example `desc`                                                                                 |
+| ---- | -------------------------- | ---------------------------------------------------------------------------------------------- |
+| 400  | Invalid phone numbers      | `Invalid phone numbers: ...`                                                                    |
+| 400  | Empty addresses / messages | `No valid recipients found...` or `No valid messages found...`                                  |
+| 400  | Too many recipients        | `Maximum number of recipients exceeded.` (100 for free-form, 10 for template modes)            |
+| 400  | Template not found         | `Message template tpl-sms-001 not found.`                                                       |
+| 400  | Template not sendable      | `Message template tpl-sms-001 is not sendable. Current status: Active and approval status: PENDING` |
+| 400  | Managed service not found  | `Managed service descriptor not found for key: otp-service`. See [Belio-managed Senders and Approval](/messaging/sms/templates/introduction#belio-managed-senders-and-approval). |
+| 400  | Category mismatch          | `Template category AUTHENTICATION does not match managed service descriptor category MARKETING`. See [Belio-managed Senders and Approval](/messaging/sms/templates/introduction#belio-managed-senders-and-approval). |
+| 400  | Insufficient message units | Team balance error message                                                                      |
+| 400  | Invalid `receiptRequest`   | Correlator or callback URL validation message                                                  |
+| 401  | Authentication failure     | —                                                                                              |
+
+### Template parameter validation errors
+
+When parameter validation fails, the response is `HTTP 400` with `desc` set to `Template parameter validation failed`.
+
+For **TemplateSendToMany**, errors are returned under a single `errors` key:
+
+```json
+{
+  "desc": "Template parameter validation failed",
+  "result": {
+    "errors": [
+      "Missing required parameter 'code'",
+      "Parameter 'code': Value for parameter 'code' must not exceed 6 characters"
+    ]
+  }
+}
+```
+
+For **TemplateSendToEach**, errors are keyed by recipient phone number:
+
+```json
+{
+  "desc": "Template parameter validation failed",
+  "result": {
+    "254700111213": [
+      "Missing required parameter 'code'"
+    ],
+    "254700111214": [
+      "Missing required parameter 'code'",
+      "Parameter 'sample': Value for parameter 'sample' must be a valid name"
+    ]
+  }
+}
+```
+
+### Common parameter validation messages
+
+| Message                                                                       | Cause                                                          |
+| ----------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `Missing required parameter '{name}'`                                         | Required placeholder with no default; not supplied in `params` |
+| `Unknown parameter '{name}'`                                                  | Supplied parameter not defined on the template                 |
+| `Duplicate parameter '{name}'`                                                | Same `name` appears more than once in `params`                 |
+| `Parameter '{name}': Value for parameter '{name}' must not exceed N characters` | Value longer than `maxLength`                                |
+| `Parameter '{name}': Value for parameter '{name}' must be alphanumeric`        | `format` is `Alphanumeric`                                    |
+| `Parameter '{name}': Value for parameter '{name}' must be numeric`             | `format` is `Numeric`                                         |
+| `Parameter '{name}': Value for parameter '{name}' must be a valid name`        | `format` is `Name`                                            |
+| `Value for parameter '{name}' must be non-empty`                              | Empty value                                                    |
+| `Value for parameter '{name}' contains forbidden characters`                  | Value contains `{`, `}`, or control characters                 |
+| `Name must be a non-empty identifier using letters, digits, and underscores`  | Invalid parameter name                                         |
+| `Resolved content cannot be longer than 960 characters`                       | Substituted message too long                                   |
+
+## Success Response
+
+On success the endpoint returns `HTTP 200`:
+
+```json
+{
+  "result": {
+    "type": "SmsResponse",
+    "requestId": "550e8400-e29b-41d4-a716-446655440000",
+    "units": {
+      "Safaricom": 1,
+      "Airtel": 1
+    },
+    "addresses": {
+      "Safaricom": 1,
+      "Airtel": 1
+    }
+  }
+}
+```
+
+| Field       | Description                                                                |
+| ----------- | --------------------------------------------------------------------------- |
+| `requestId` | Unique ID for this send request, used to correlate with delivery receipts |
+| `units`     | Message units consumed per mobile network channel                         |
+| `addresses` | Number of recipients routed per channel                                   |
