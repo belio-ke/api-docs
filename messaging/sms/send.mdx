@@ -22,116 +22,181 @@ referencing its `templateId` (see [SMS Templates](/messaging/sms/templates/intro
 
 | `type`               | Kind      | Description                                            |
 | -------------------- | --------- | ----------------------------------------------------- |
-| `SendToMany`         | Free-form | Same message sent to multiple recipients              |
 | `SendToEach`         | Free-form | Message tailored per recipient                        |
-| `TemplateSendToMany` | Template  | One shared parameter set sent to multiple recipients  |
+| `SendToMany`         | Free-form | Same message sent to multiple recipients              |
 | `TemplateSendToEach` | Template  | Each recipient receives their own parameter values    |
+| `TemplateSendToMany` | Template  | One shared parameter set sent to multiple recipients  |
 
 ### Limits
 
-| Rule                        | Free-form (`SendToMany` / `SendToEach`) | Template (`TemplateSendToMany` / `TemplateSendToEach`) |
+| Rule                        | Free-form (`SendToEach` / `SendToMany`) | Template (`TemplateSendToEach` / `TemplateSendToMany`) |
 | --------------------------- | --------------------------------------- | ------------------------------------------------------ |
 | Maximum recipients per request | **100**                              | **10**                                                 |
 | Maximum message length      | **960** characters                      | **960** characters (after parameters are resolved)     |
 | SMS message unit size       | **160** characters                      | **160** characters                                     |
 
-## Free-form Modes
+### Request Schemas
 
-- `SendToMany` — the same message is sent to multiple recipients.
-- `SendToEach` — the message is sent to individual recipients and can be tailored per recipient.
+<Tabs>
+    <Tab title="SendToEach">
 
-Use the interactive playground above to build and try free-form requests.
+        Send individually tailored free-form messages to multiple recipients.
 
-## Template Modes
+        | Field            | Type     | Required | Description                        |
+        | ---------------- | -------- | -------- | ----------------------------------- |
+        | `type`           | string   | yes      | Must be `"SendToEach"`             |
+        | `messages`       | object[] | yes      | Per-recipient entries (**1–100**)  |
+        | `receiptRequest` | object   | no       | Optional delivery receipt callback |
 
-Template requests reference an approved template by `templateId` and supply
-[Template Parameters](/messaging/sms/templates/parameters) for its placeholders.
+        Each item in `messages`:
 
-<Warning>
-    After all parameters are substituted, the final message must not exceed **960
+        | Field     | Type   | Required | Description                    |
+        | --------- | ------ | -------- | ------------------------------- |
+        | `phone`   | string | yes      | Recipient phone number          |
+        | `message` | string | yes      | Message text (max **960** characters) |
+
+        ```bash
+        curl --request POST \
+        --url https://api.belio.co.ke/message/{serviceId} \
+        --header 'Authorization: Bearer <token>' \
+        --header 'Content-Type: application/json' \
+        --data '{
+            "type": "SendToEach",
+            "messages": [
+        {
+            "phone": "254700111213",
+            "message": "Hi Alice, your order #1042 has shipped."
+        },
+        {
+            "phone": "254700111214",
+            "message": "Hi Bob, your order #1043 has shipped."
+        }
+            ]
+        }'
+        ```
+
+    </Tab>
+    <Tab title="SendToMany">
+
+        Send the same free-form message to multiple phone numbers.
+
+        | Field            | Type     | Required | Description                                    |
+        | ---------------- | -------- | -------- | ----------------------------------------------- |
+        | `type`           | string   | yes      | Must be `"SendToMany"`                          |
+        | `addresses`      | string[] | yes      | Recipient phone numbers (**1–100**)             |
+        | `message`        | string   | yes      | Message text (max **960** characters)           |
+        | `receiptRequest` | object   | no       | Optional delivery receipt callback              |
+
+        ```bash
+        curl --request POST \
+        --url https://api.belio.co.ke/message/{serviceId} \
+        --header 'Authorization: Bearer <token>' \
+        --header 'Content-Type: application/json' \
+        --data '{
+            "type": "SendToMany",
+            "addresses": [
+            "+254700111213",
+            "254750108109"
+            ],
+            "message": "Your appointment is confirmed for tomorrow at 10am.",
+            "receiptRequest": {
+            "correlator": "reminder-batch-001",
+            "callbackUrl": "https://example.com/dlr"
+        }
+        }'
+        ```
+
+    </Tab>
+    <Tab title="TemplateSendToEach">
+
+        Send the same template to multiple recipients, each with their own parameter values.
+
+        | Field            | Type     | Required | Description                        |
+        | ---------------- | -------- | -------- | ---------------------------------- |
+        | `type`           | string   | yes      | Must be `"TemplateSendToEach"`     |
+        | `templateId`     | string   | yes      | ID of the SMS template             |
+        | `messages`       | object[] | yes      | Per-recipient entries (**1–10**)   |
+        | `receiptRequest` | object   | no       | Optional delivery receipt callback |
+
+        Each item in `messages`:
+
+        | Field    | Type     | Required | Description                            |
+        | -------- | -------- | -------- | --------------------------------------- |
+        | `phone`  | string   | yes      | Recipient phone number                 |
+        | `params` | object[] | yes      | [Template parameters](/messaging/sms/templates/parameters) for this recipient |
+
+        ```bash
+        curl --request POST \
+        --url https://api.belio.co.ke/message/{serviceId} \
+        --header 'Authorization: Bearer <token>' \
+        --header 'Content-Type: application/json' \
+        --data '{
+            "type": "TemplateSendToEach",
+            "templateId": "tpl-sms-001",
+            "messages": [
+        {
+            "phone": "254700111213",
+            "params": [
+        { "name": "sample", "value": "Alice" },
+        { "name": "code", "value": "111111" }
+            ]
+        },
+        {
+            "phone": "254700111214",
+            "params": [
+        { "name": "sample", "value": "Bob" },
+        { "name": "code", "value": "222222" }
+            ]
+        }
+            ]
+        }'
+        ```
+
+    </Tab>
+    <Tab title="TemplateSendToMany">
+
+        Send the same resolved template message to multiple phone numbers.
+
+        | Field            | Type     | Required | Description                            |
+        | ---------------- | -------- | -------- | -------------------------------------- |
+        | `type`           | string   | yes      | Must be `"TemplateSendToMany"`         |
+        | `templateId`     | string   | yes      | ID of the SMS template                 |
+        | `addresses`      | string[] | yes      | Recipient phone numbers (**1–10**)     |
+        | `params`         | object[] | yes      | [Template parameter](/messaging/sms/templates/parameters) values |
+        | `receiptRequest` | object   | no       | Optional delivery receipt callback     |
+
+        ```bash
+        curl --request POST \
+        --url https://api.belio.co.ke/message/{serviceId} \
+        --header 'Authorization: Bearer <token>' \
+        --header 'Content-Type: application/json' \
+        --data '{
+            "type": "TemplateSendToMany",
+            "templateId": "tpl-sms-001",
+            "addresses": [
+            "+254700111213",
+            "254750108109"
+            ],
+            "params": [
+        { "name": "sample", "value": "Alice" },
+        { "name": "code", "value": "654321" }
+            ],
+            "receiptRequest": {
+            "correlator": "otp-batch-001",
+            "callbackUrl": "https://example.com/dlr"
+        }
+        }'
+        ```
+
+    </Tab>
+</Tabs>
+
+<Note>
+    **Important:** for `TemplateSendToEach` and `TemplateSendToMany`, after all
+    parameters are substituted, the final message must not exceed **960
     characters**. A longer resolved message is rejected with `Resolved content
     cannot be longer than 960 characters`. There is no truncation or fallback.
-</Warning>
-
-### TemplateSendToMany
-
-Send the same resolved template message to multiple phone numbers.
-
-| Field            | Type     | Required | Description                            |
-| ---------------- | -------- | -------- | -------------------------------------- |
-| `type`           | string   | yes      | Must be `"TemplateSendToMany"`         |
-| `templateId`     | string   | yes      | ID of the SMS template                 |
-| `addresses`      | string[] | yes      | Recipient phone numbers (**1–10**)     |
-| `params`         | object[] | yes      | [Template parameter](/messaging/sms/templates/parameters) values |
-| `receiptRequest` | object   | no       | Optional delivery receipt callback     |
-
-```bash
-curl --request POST \
-  --url https://api.belio.co.ke/message/{serviceId} \
-  --header 'Authorization: Bearer <token>' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "type": "TemplateSendToMany",
-    "templateId": "tpl-sms-001",
-    "addresses": [
-      "+254700111213",
-      "254750108109"
-    ],
-    "params": [
-      { "name": "sample", "value": "Alice" },
-      { "name": "code", "value": "654321" }
-    ],
-    "receiptRequest": {
-      "correlator": "otp-batch-001",
-      "callbackUrl": "https://example.com/dlr"
-    }
-  }'
-```
-
-### TemplateSendToEach
-
-Send the same template to multiple recipients, each with their own parameter values.
-
-| Field            | Type     | Required | Description                        |
-| ---------------- | -------- | -------- | ---------------------------------- |
-| `type`           | string   | yes      | Must be `"TemplateSendToEach"`     |
-| `templateId`     | string   | yes      | ID of the SMS template             |
-| `messages`       | object[] | yes      | Per-recipient entries (**1–10**)   |
-| `receiptRequest` | object   | no       | Optional delivery receipt callback |
-
-Each item in `messages`:
-
-| Field    | Type     | Required | Description                            |
-| -------- | -------- | -------- | -------------------------------------- |
-| `phone`  | string   | yes      | Recipient phone number                 |
-| `params` | object[] | yes      | [Template parameters](/messaging/sms/templates/parameters) for this recipient |
-
-```bash
-curl --request POST \
-  --url https://api.belio.co.ke/message/{serviceId} \
-  --header 'Authorization: Bearer <token>' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "type": "TemplateSendToEach",
-    "templateId": "tpl-sms-001",
-    "messages": [
-      {
-        "phone": "254700111213",
-        "params": [
-          { "name": "sample", "value": "Alice" },
-          { "name": "code", "value": "111111" }
-        ]
-      },
-      {
-        "phone": "254700111214",
-        "params": [
-          { "name": "sample", "value": "Bob" },
-          { "name": "code", "value": "222222" }
-        ]
-      }
-    ]
-  }'
-```
+</Note>
 
 ## Errors
 
@@ -154,34 +219,34 @@ curl --request POST \
 
 When parameter validation fails, the response is `HTTP 400` with `desc` set to `Template parameter validation failed`.
 
-For **TemplateSendToMany**, errors are returned under a single `errors` key:
-
-```json
-{
-  "desc": "Template parameter validation failed",
-  "result": {
-    "errors": [
-      "Missing required parameter 'code'",
-      "Parameter 'code': Value for parameter 'code' must not exceed 6 characters"
-    ]
-  }
-}
-```
-
 For **TemplateSendToEach**, errors are keyed by recipient phone number:
 
 ```json
 {
-  "desc": "Template parameter validation failed",
-  "result": {
+"desc": "Template parameter validation failed",
+    "result": {
     "254700111213": [
-      "Missing required parameter 'code'"
+        "Missing required parameter 'code'"
     ],
-    "254700111214": [
-      "Missing required parameter 'code'",
-      "Parameter 'sample': Value for parameter 'sample' must be a valid name"
+        "254700111214": [
+        "Missing required parameter 'code'",
+        "Parameter 'sample': Value for parameter 'sample' must be a valid name"
     ]
-  }
+}
+}
+```
+
+For **TemplateSendToMany**, errors are returned under a single `errors` key:
+
+```json
+{
+"desc": "Template parameter validation failed",
+    "result": {
+    "errors": [
+        "Missing required parameter 'code'",
+        "Parameter 'code': Value for parameter 'code' must not exceed 6 characters"
+    ]
+}
 }
 ```
 
@@ -207,23 +272,23 @@ On success the endpoint returns `HTTP 200`:
 
 ```json
 {
-  "result": {
+"result": {
     "type": "SmsResponse",
-    "requestId": "550e8400-e29b-41d4-a716-446655440000",
-    "units": {
-      "Safaricom": 1,
-      "Airtel": 1
+        "requestId": "550e8400-e29b-41d4-a716-446655440000",
+        "units": {
+        "Safaricom": 1,
+            "Airtel": 1
     },
     "addresses": {
-      "Safaricom": 1,
-      "Airtel": 1
+        "Safaricom": 1,
+            "Airtel": 1
     }
-  }
+}
 }
 ```
 
-| Field       | Description                                                                |
+| Field       | Description                                                                 |
 | ----------- | --------------------------------------------------------------------------- |
-| `requestId` | Unique ID for this send request, used to correlate with delivery receipts |
-| `units`     | Message units consumed per mobile network channel                         |
-| `addresses` | Number of recipients routed per channel                                   |
+| requestId | Unique ID for this send request, used to correlate with delivery receipts   |
+| units    | Message units consumed per mobile network channel                           |
+| addresses | Number of recipients routed per channel                                     |
