@@ -95,8 +95,8 @@ referencing its `templateId` (see [SMS Templates](/messaging/sms/templates/intro
         --data '{
             "type": "SendToMany",
             "addresses": [
-            "+254700111213",
-            "254750108109"
+            "+25470012345",
+            "254100000000"
             ],
             "message": "Your appointment is confirmed for tomorrow at 10am.",
             "receiptRequest": {
@@ -174,8 +174,8 @@ referencing its `templateId` (see [SMS Templates](/messaging/sms/templates/intro
             "type": "TemplateSendToMany",
             "templateId": "tpl-sms-001",
             "addresses": [
-            "+254700111213",
-            "254750108109"
+            "+254712345678",
+            "254100000000"
             ],
             "params": [
         { "name": "sample", "value": "Alice" },
@@ -187,7 +187,6 @@ referencing its `templateId` (see [SMS Templates](/messaging/sms/templates/intro
         }
         }'
         ```
-
     </Tab>
 </Tabs>
 
@@ -211,9 +210,17 @@ referencing its `templateId` (see [SMS Templates](/messaging/sms/templates/intro
 | 400  | Template not sendable      | `Message template tpl-sms-001 is not sendable. Current status: Active and approval status: PENDING` |
 | 400  | Managed service not found  | `Managed service descriptor not found for key: otp-service`. See [Belio-managed Senders and Approval](/messaging/sms/templates/introduction#belio-managed-senders-and-approval). |
 | 400  | Category mismatch          | `Template category AUTHENTICATION does not match managed service descriptor category MARKETING`. See [Belio-managed Senders and Approval](/messaging/sms/templates/introduction#belio-managed-senders-and-approval). |
-| 400  | Insufficient message units | Team balance error message                                                                      |
+| 400  | Insufficient message units | Team balance error message. Raised when consumption fails entirely for the routable units      |
 | 400  | Invalid `receiptRequest`   | Correlator or callback URL validation message                                                  |
 | 401  | Authentication failure     | —                                                                                              |
+
+<Note>
+    Recipients with no matching active service channel, or on a channel with an
+    insufficient balance, do **not** cause an error. The request succeeds with
+    `HTTP 200` and those numbers are returned in
+    [`skipped`](#skipped-recipients) — even when every recipient is skipped.
+    Malformed phone numbers still return `HTTP 400`.
+</Note>
 
 ### Template parameter validation errors
 
@@ -280,15 +287,108 @@ On success the endpoint returns `HTTP 200`:
             "Airtel": 1
     },
     "addresses": {
-        "Safaricom": 1,
-            "Airtel": 1
-    }
+        "Safaricom": 2,
+            "Airtel": 2
+    },
+    "skipped": [
+        "254712345678",
+        "254100000000"
+    ]
 }
 }
 ```
 
-| Field       | Description                                                                 |
-| ----------- | --------------------------------------------------------------------------- |
-| requestId | Unique ID for this send request, used to correlate with delivery receipts   |
-| units    | Message units consumed per mobile network channel                           |
-| addresses | Number of recipients routed per channel                                     |
+| Field       | Type     | Description                                                               |
+| ----------- | -------- | ------------------------------------------------------------------------- |
+| `requestId` | UUID     | Correlation ID for this send request, used to match delivery receipts     |
+| `units`     | object   | Message units consumed per mobile network channel                         |
+| `addresses` | object   | Number of recipients accepted and dispatched per channel                  |
+| `skipped`   | string[] | Recipients that were **not** debited and **not** dispatched               |
+
+`skipped` is always present. It is an empty array (`[]`) when every recipient was
+accepted.
+
+### Skipped recipients
+
+A request is no longer rejected when some — or all — of its recipients cannot be
+processed. Only recipients that can be routed on an active SMS service channel
+are debited and dispatched; the rest are returned in `skipped`.
+
+A phone number is added to `skipped` when:
+
+| Reason                                                                    | Behaviour                                        |
+| ------------------------------------------------------------------------- | ------------------------------------------------ |
+| No matching active SMS service channel for that recipient's network        | Not debited, not dispatched                      |
+| The channel returned zero consumed units (insufficient balance on that channel) | Excluded from dispatch, included in `skipped` |
+
+Accepted recipients appear only under `addresses` and `units` for their channel.
+
+### Partial success
+
+When a request mixes routable and non-routable recipients, the routable ones are
+processed normally (units deducted, message dispatched), the rest are listed in
+`skipped`, and the API still returns `HTTP 200`.
+
+Request against a service configured for Safaricom only:
+
+```json
+{
+    "type": "SendToMany",
+    "message": "Hello World",
+    "addresses": [
+        "254712345678",
+        "254710000000",
+    ]
+}
+```
+
+Response:
+
+```json
+{
+"result": {
+    "type": "SmsResponse",
+        "requestId": "550e8400-e29b-41d4-a716-446655440000",
+        "units": { "Safaricom": 1 },
+        "addresses": { "Safaricom": 1 },
+        "skipped": ["254700111213"]
+}
+}
+```
+
+### All recipients skipped
+
+If none of the provided phone numbers has a matching service channel:
+
+- The API returns `HTTP 200` — **not** `HTTP 400`.
+- `units` and `addresses` are empty.
+- `skipped` contains every submitted phone number, exactly as provided in the request.
+- No units are consumed and no messages are dispatched.
+- For template sends, template lookup and validation are not performed, since
+  nothing is routable.
+
+```json
+{
+"result": {
+    "type": "SmsResponse",
+        "requestId": "550e8400-e29b-41d4-a716-446655440000",
+        "units": {},
+        "addresses": {},
+        "skipped": ["+254700000000", "123456789"]
+}
+}
+```
+
+### Integration guidance
+
+<Warning>
+    Treat `HTTP 200` as acceptance of the request, not as confirmation that every
+    recipient was sent a message. Always inspect `skipped`.
+</Warning>
+
+- Retry skipped numbers through another service or channel where appropriate, or
+  surface them to operators when delivery was expected.
+- Use `addresses` and `units` for billing and delivery expectations for this request.
+- Use `requestId` to correlate [delivery receipts](/messaging/sms/delivery-receipt)
+  for the recipients that were dispatched.
+- Do not treat a non-empty `skipped` list as a failure of the whole request.

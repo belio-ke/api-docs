@@ -1236,7 +1236,7 @@
               },
               "addresses": {
                 "type": "object",
-                "description": "Number of recipient addresses processed",
+                "description": "Number of recipient addresses accepted and dispatched",
                 "properties": {
                   "Safaricom": {
                     "type": "integer",
@@ -1249,6 +1249,17 @@
                     "description": "Number of airtel recipient addresses processed"
                   }
                 }
+              },
+              "skipped": {
+                "type": "array",
+                "description": "Recipients that were neither debited nor dispatched, because no active service channel matched their network or the channel had an insufficient balance. Always present; empty when every recipient was accepted.",
+                "items": {
+                  "type": "string"
+                },
+                "example": [
+                  "254700000000",
+                  "254100000000"
+                ]
               }
             }
           }
