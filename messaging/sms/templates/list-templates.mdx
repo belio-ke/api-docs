@@ -1,0 +1,136 @@
+---
+title: "List templates"
+---
+## Overview
+
+Use this endpoint to retrieve SMS templates available to your API client. Each template includes its content, metadata, approval status, and parameter definitions.
+
+Use the returned `id` as the `templateId` when sending template-based SMS messages.
+
+<Note>
+    Templates are resolved for the team associated with the authenticated API client. No query parameters or request
+    body are required.
+</Note>
+
+## Authentication
+
+This endpoint requires a bearer token with the following API client authorization scope:
+
+`message.sms.template.list`
+
+Refer to [Authentication](/authentication) for information on how to obtain a bearer token and configure API client scopes.
+
+## Request
+
+### Headers
+
+| Header          | Required | Description             |
+| --------------- | -------- | ----------------------- |
+| `Authorization` | Yes      | `Bearer <access_token>` |
+| `Content-Type`  | No       | `application/json`      |
+
+### Example
+
+```bash
+curl --request GET \
+  --url https://api.belio.co.ke/templates/sms \
+  --header 'Authorization: Bearer <access_token>'
+```
+
+## Success Response
+
+On success, the endpoint returns `HTTP 200` with the SMS templates available to the authenticated team.
+
+```json
+{
+  "desc": "OK",
+  "result": [
+    {
+      "id": "tpl-sms-001",
+      "content": "Hello {{sample}}, your code is {{code}}",
+      "description": "OTP template",
+      "shared": false,
+      "status": "Active",
+      "category": "AUTHENTICATION",
+      "approvalStatus": "APPROVED",
+      "paramDefinitions": [
+        {
+          "name": "sample",
+          "format": "PlainText",
+          "required": true,
+          "default": "World"
+        },
+        {
+          "name": "code",
+          "format": "PlainText",
+          "required": true,
+          "maxLength": 6,
+          "default": "123456"
+        }
+      ],
+      "createdAt": "2024-11-18T10:49:34"
+    }
+  ]
+}
+```
+
+If no templates are available, `result` is returned as an empty array:
+
+```json
+{
+  "desc": "OK",
+  "result": []
+}
+```
+
+## Template Fields
+
+| Field               | Type     | Description                                                                                                 |
+| ------------------- | -------- | ----------------------------------------------------------------------------------------------------------- |
+| `id`                | string   | Unique template identifier. Use this value as `templateId` when sending template-based SMS messages.        |
+| `content`           | string   | Template body containing `{{paramName}}` placeholders.                                                      |
+| `description`       | string   | Human-readable description of the template.                                                                 |
+| `tags`              | string[] | Optional template tags. Omitted when empty.                                                                 |
+| `shared`            | boolean  | Indicates whether the template is shared across teams.                                                      |
+| `status`            | string   | Template entity status, such as `Active` or `Archived`.                                                     |
+| `category`          | string   | Template category, such as `AUTHENTICATION` or `MARKETING`.                                                 |
+| `approvalStatus`    | string   | Template approval state, such as `APPROVED`, `PENDING`, or `REJECTED`.                                      |
+| `paramDefinitions`  | object[] | Parameter definitions for placeholders used in the template content.                                        |
+| `managedServiceKey` | string   | Managed service associated with the template. Omitted when the template is not linked to a managed service. |
+| `reviewComment`     | string   | Review feedback associated with the template. Omitted when absent.                                          |
+| `createdAt`         | string   | ISO-8601 local date-time when the template was created.                                                     |
+| `updatedAt`         | string   | ISO-8601 local date-time of the last update. Omitted when absent.                                           |
+
+<Note>
+    For more information about template status and approval states, see [View Templates](/messaging/sms/templates/view).
+</Note>
+
+## Parameter Definition Fields
+
+The `paramDefinitions` array describes the parameters required to resolve placeholders in the template content.
+
+| Field       | Type    | Description                                                                 |
+| ----------- | ------- | --------------------------------------------------------------------------- |
+| `name`      | string  | Parameter name matching a `{{name}}` placeholder in the template content.   |
+| `format`    | string  | Parameter format, such as `PlainText`.                                      |
+| `required`  | boolean | Indicates whether the parameter must be supplied when sending the template. |
+| `default`   | string  | Default value used when the parameter is not supplied.                      |
+| `maxLength` | number  | Maximum allowed parameter length. Omitted when no maximum is configured.    |
+
+## Error Responses
+
+| HTTP Status                 | Description                                                         |
+| --------------------------- | ------------------------------------------------------------------- |
+| `401 Unauthorized`          | The bearer token is missing, invalid, or expired.                   |
+| `403 Forbidden`             | The API client does not have the `message.sms.template.list` scope. |
+| `429 Too Many Requests`     | The configured request rate limit has been exceeded.                |
+| `503 Service Unavailable`   | SMS templates are temporarily unavailable. Retry the request later. |
+| `500 Internal Server Error` | An unexpected server or API configuration error occurred.           |
+
+## Rate Limit
+
+This endpoint is limited to **10 requests per second per team**.
+
+<Note>
+    Use the returned template `id` as `templateId` when sending a template-based SMS message through the Message API.
+</Note>
