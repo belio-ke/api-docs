@@ -2,23 +2,28 @@
 title: Delivery Receipts
 ---
 
-Delivery receipts provide a mechanism to track the final status of data bundle disbursement requests. When you submit a request with a `receiptRequest` object, the system will send a delivery receipt to your specified callback URL once the provisioning attempt reaches its final state.
+Delivery receipts provide a mechanism to track the final status of data bundle disbursement requests.
+When you submit a request with a `receiptRequest` object, the system will send a delivery receipt to your specified callback URL once the provisioning attempt reaches its final state.
 This enables real-time monitoring of data disbursement success, failure, or pending conditions.
 
 <Note>
-  Delivery receipts are only sent when a `receiptRequest` object is included in the original data disbursement request.
+    Delivery receipts are only sent when a `receiptRequest` object is included in the original data disbursement
+    request.
 </Note>
 
 <Note>
-  Ensure that the callback URL is publicly accessible and can accept incoming HTTP `POST` requests without requiring authentication.
+    Ensure that the callback URL is publicly accessible and can accept incoming HTTP `POST` requests without requiring
+    authentication.
 </Note>
 
 <Note>
-  If you enabled optional SMS notifications (`messaging`), the callback URL may also receive SMS delivery receipts. SMS receipts use the same format as the Message API delivery receipts; see [Message Delivery Receipts](/message/delivery-receipt).
+    If you enabled optional SMS notifications (`messaging`), the callback URL may also receive SMS delivery receipts.
+    SMS receipts use the same format as the Message API delivery receipts; see [Message Delivery
+    Receipts](/message/delivery-receipt).
 </Note>
 
 <Note>
-  Receipts may be delivered asynchronously and out of order.
+    Receipts may be delivered asynchronously and out of order.
 </Note>
 
 ## Delivery Receipt Format
@@ -28,6 +33,7 @@ A delivery receipt is sent as an HTTP `POST` request to the specified callback U
 ```json
 {
   "correlator": "8f24c8c6-7e7c-4b6f-a622-d4a25f91d3c1",
+  "requestId": "550e8400-e29b-41d4-a716-446655440000",
   "phone": "+254123456789",
   "denomination": "2GB",
   "timestamp": "2025-06-02T14:30:00Z",
@@ -41,17 +47,46 @@ A delivery receipt is sent as an HTTP `POST` request to the specified callback U
 
 ### Fields Explanation
 
-| Field          | Type   | Description                                                                                       |
-|----------------|--------|---------------------------------------------------------------------------------------------------|
-| `correlator`   | String | The same correlator supplied in your initial disbursement request. Used for tracing and matching. |
-| `phone`        | String | The recipient MSISDN in international format.                                                     |
-| `denomination` | String | The specific mobile data bundle attempted for provisioning.                                       |
-| `timestamp`    | String | ISO-8601 timestamp indicating when the final delivery outcome was recorded.                       |
-| `status`       | String | The final delivery result of the data disbursement.                                               |
-| `reason`       | String | *Optional.* Human-readable explanation describing the delivery status.                            |
-| `reasonCode`   | String | *Optional.* Provider or system code explaining the cause of a failure or delivery state.          |
+| Field          | Type   | Description                                                                                                                                                             |
+|----------------|--------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `correlator`   | String | The same correlator supplied in your initial disbursement request. Used for tracing and matching.                                                                       |
+| `phone`        | String | The recipient MSISDN in international format.                                                                                                                           |
+| `denomination` | String | The specific mobile data bundle attempted for provisioning.                                                                                                             |
+| `timestamp`    | String | ISO-8601 timestamp indicating when the final delivery outcome was recorded.                                                                                             |
+| `status`       | String | The final delivery result of the data disbursement.                                                                                                                     |
+| `reason`       | String | *Optional.* Human-readable explanation describing the delivery status.                                                                                                  |
+| `reasonCode`   | String | *Optional.* Provider or system code explaining the cause of a failure or delivery state.                                                                                |
+| `requestId`    | String | Original disbursement request ID returned by the API when the request was submitted. Use this value to correlate the delivery receipt with the originating API request. |
 
 ---
+
+### Correlating a Delivery Receipt
+
+When a data disbursement request is submitted, the API returns a unique request ID. The same ID is included as requestId in the corresponding delivery receipt callback.
+Clients can store the requestId from the API response and use it to match subsequent delivery receipts to the original disbursement request.
+For example, if the API response contains:
+```json
+{
+"requestId": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+the corresponding delivery receipt will contain the same value:
+```json
+{
+"correlator": "8f24c8c6-7e7c-4b6f-a622-d4a25f91d3c1",
+"requestId": "550e8400-e29b-41d4-a716-446655440000",
+"phone": "+254123456789",
+"denomination": "2GB",
+"timestamp": "2025-06-02T14:30:00Z",
+"status": "Delivered",
+"reason": "ok",
+"reasonCode": "200"
+}
+```
+The requestId and correlator serve different purposes:
+requestId is generated by the system and returned in the original API response.
+Correlator is supplied by the client as part of the receiptRequest.
 
 ### Possible Delivery Status Values
 
