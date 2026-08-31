@@ -64,7 +64,7 @@
               },
               {
                 "group": "WhatsApp",
-                "tag": "COMING SOON",
+                "tag": "BETA",
                 "pages": [
                   "messaging/whatsapp/introduction",
                   {
@@ -92,6 +92,7 @@
           },
           {
             "group": "Mobile Data",
+            "tag": "NEW",
             "pages": [
               "mobile-data/introduction",
               "mobile-data/send",

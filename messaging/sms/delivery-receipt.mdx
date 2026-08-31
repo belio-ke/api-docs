@@ -6,14 +6,12 @@ Delivery receipts provide a mechanism to track the status of messages sent throu
 This allows you to monitor the delivery status of your messages in real-time.
 
 <Note>
-  Delivery receipts are sent to the callback URL specified in the
-  `receiptRequest` object of the message request. If you do not include a
-  `receiptRequest`, no delivery receipt will be sent.
-</Note>
+   -  Delivery receipts are sent to the callback URL specified in the
+    `receiptRequest` object of the message request. If you do not include a
+    `receiptRequest`, no delivery receipt will be sent.
 
-<Note>
-  Ensure that the callback URL is publicly accessible and can handle incoming
-  HTTP POST requests to receive the delivery receipts.
+  -  Ensure that the callback URL is publicly accessible and can handle incoming
+    HTTP POST requests to receive the delivery receipts.
 </Note>
 
 ## Delivery Receipt Format
@@ -24,6 +22,7 @@ A delivery receipt is sent as an HTTP POST request to your callback URL with the
 {
   "type": "SmsDeliveryReceipt",
   "correlator": "8f24c8c6-7e7c-4b6f-a622-d4a25f91d3c1",
+  "requestId": "7tewbasen-1234-5678-90ab-cdef12345678",
   "phone": "+254123456789",
   "timestamp": "2025-06-02T14:30:00Z",
   "deliveryStatus": "Delivered"
@@ -32,16 +31,40 @@ A delivery receipt is sent as an HTTP POST request to your callback URL with the
 
 ### Fields Explanation
 
-| Field            | Type   | Description                                                                         |
-| ---------------- | ------ | ----------------------------------------------------------------------------------- |
-| `type`           | String | Type of the request, which is always `SmsDeliveryReceipt` for SMS delivery receipts |
-| `correlator`     | String | Unique ID that correlates with your original message request                        |
-| `phone`          | String | Recipient's phone number                                                            |
-| `timestamp`      | String | ISO-8601 formatted date and time when the delivery status was recorded              |
-| `deliveryStatus` | String | Current delivery status of the message                                              |
-| `reason`         | String | Optional human-readable explanation for the delivery status                         |
-| `reasonCode`     | String | Optional provider-specific code related to the delivery status                      |
+| Field            | Type   | Description                                                                                                                                                        |
+|------------------|--------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `type`           | String | Type of the request, which is always `SmsDeliveryReceipt` for SMS delivery receipts                                                                                |
+| `correlator`     | String | Unique ID that correlates with your original message request                                                                                                       |
+| `phone`          | String | Recipient's phone number                                                                                                                                           |
+| `timestamp`      | String | ISO-8601 formatted date and time when the delivery status was recorded                                                                                             |
+| `deliveryStatus` | String | Current delivery status of the message                                                                                                                             |
+| `reason`         | String | Optional human-readable explanation for the delivery status                                                                                                        |
+| `reasonCode`     | String | Optional provider-specific code related to the delivery status                                                                                                     |
+| `requestId`      | String | Original message request ID returned by the API when the message was submitted. Use this value to correlate the delivery receipt with the originating API request. |
 
+### Correlating a Delivery Receipt
+
+When a message is submitted, the API returns a unique request ID for that message. The same ID is included as requestId in the corresponding delivery receipt callback.
+Clients can store the request ID from the API response and use it to match subsequent delivery receipts to the original message.
+For example, if the API response contains:
+```json
+{
+"requestId": "7tewbasen-1234-5678-90ab-cdef12345678"
+}
+```
+The corresponding delivery receipt will contain:
+```json
+{
+"type": "SmsDeliveryReceipt",
+"correlator": "8f24c8c6-7e7c-4b6f-a622-d4a25f91d3c1",
+"requestId": "7tewbasen-1234-5678-90ab-cdef12345678",
+"phone": "+254123456789",
+"timestamp": "2025-06-02T14:30:00Z",
+"deliveryStatus": "Delivered"
+}
+```
+
+This allows the delivery receipt to be reliably associated with the original message request.
 ### Possible Delivery Status Values
 
 | Status               | Description                                                |
@@ -60,7 +83,7 @@ A delivery receipt is sent as an HTTP POST request to your callback URL with the
 
 ### Receipt Request
 
-An optional object on send requests that enables delivery status callbacks.
+An optional object on sent requests that enables delivery status callbacks.
 It must be included in the SMS message request body when sending a message to receive delivery receipts for that message.
 
 ```json
@@ -72,7 +95,7 @@ It must be included in the SMS message request body when sending a message to re
 
 ### Receipt Request
 
-An optional object on send requests that enables delivery status callbacks.
+An optional object on sent requests that enables delivery status callbacks.
 It must be included in the SMS message request body when sending a message to receive delivery receipts for that message.
 
 ```json
@@ -88,7 +111,7 @@ It must be included in the SMS message request body when sending a message to re
 | callbackUrl | string | Valid `https://` or `http://` URL. The endpoint must not require authentication                                  |
 
 <Warning>
-  When provided, **both fields are required**. An invalid `receiptRequest`
-  causes the entire request to be rejected with `400 Bad Request` before any
-  messages are dispatched.
+    When provided, **both fields are required**. An invalid `receiptRequest`
+    causes the entire request to be rejected with `400 Bad Request` before any
+    messages are dispatched.
 </Warning>
