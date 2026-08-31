@@ -55,7 +55,8 @@
                       "messaging/sms/templates/introduction",
                       "messaging/sms/templates/parameters",
                       "messaging/sms/templates/create-template",
-                      "messaging/sms/templates/view-templates"
+                      "messaging/sms/templates/view-templates",
+                      "messaging/sms/templates/list-templates"
                     ]
                   },
                   "messaging/sms/send",
