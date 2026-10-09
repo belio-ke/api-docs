@@ -11,18 +11,24 @@ openapi: "POST /message/{serviceId}/whatsapp"
     You can configure scopes on the [API Clients](https://cloud.belio.co.ke/team-overview/api-access-keys) page.
 </Note>
 
+### Rate Limit
+
+This endpoint is rate limited to **400** messages per second.
+
 ## Request Modes
 
-The API supports two request modes:
+The `type` field selects how recipients share template parameters. Only approved, sendable templates can be sent. See [WhatsApp templates](/messaging/whatsapp/templates/introduction).
 
-- `TemplateSendToMany` - Sends the same template message with shared parameters to multiple recipients.
-- `TemplateSendToEach` - Sends personalized template messages to individual recipients. Parameters can differ per recipient.
+| `type` | Description |
+| ------ | ----------- |
+| `TemplateSendToMany` | One template and one shared `params` list, sent to every number in `addresses` |
+| `TemplateSendToEach` | One template, with a `params` list per recipient in `messages` |
 
----
+Both modes accept at most **10** recipients per request.
 
 ### Template Parameters
 
-Templates support dynamic parameters that are substituted into the template body, header, buttons, OTP, offers, carousel cards, media, and location components when messages are sent.
+Templates fill placeholders in the body, header, buttons, OTP, offers, carousel cards, media, and location components when the message is sent.
 
 #### Parameter Types
 
@@ -60,3 +66,64 @@ Templates support dynamic parameters that are substituted into the template body
     }
   ]
 }
+```
+
+## Success Response
+
+A successful send returns `HTTP 200`. Queued recipients are counted in `addresses`. Recipients the API could not reserve are listed in `skipped`.
+
+```json
+{
+  "result": {
+    "type": "WhatsAppResponse",
+    "requestId": "550e8400-e29b-41d4-a716-446655440000",
+    "addresses": 2,
+    "units": {
+      "Authentication": 2
+    },
+    "skipped": []
+  }
+}
+```
+
+| Field       | Type     | Description |
+| ----------- | -------- | ----------- |
+| `requestId` | UUID     | Correlation ID for this send. Match it to [delivery receipts](/messaging/whatsapp/delivery-receipt). |
+| `addresses` | integer  | Number of recipients accepted and queued |
+| `units`     | object   | Units reserved per [pricing category](/messaging/whatsapp/pricing#pricing-categories). `{}` when this service does not debit WhatsApp bundles. |
+| `skipped`   | string[] | Recipients that were not reserved and not queued. Always present. Empty (`[]`) when every recipient was accepted. |
+
+Numbers in `skipped` are E.164, for example `+2348031234567`.
+
+### Skipped recipients
+
+Unit billing applies on sandbox teams and on Belio-managed WhatsApp services. When it applies, the API reserves bundle units from the template's [pricing category](/messaging/whatsapp/pricing#pricing-categories) before it queues messages. Remaining units per category are available from [List Bundles](/bundle/list) with `productType=WHATSAPP`.
+
+Every recipient in a request uses that one category. See [Pricing categories](/messaging/whatsapp/pricing#pricing-categories).
+
+If that category reserves `0`, nothing is queued. The API returns `HTTP 400` instead of a partial `skipped` list. See [When every category reserves zero](#when-every-category-reserves-zero).
+
+On `HTTP 200`, `skipped` is empty when every valid recipient was queued.
+
+Malformed numbers return `HTTP 400` with `Invalid phone number(s): ...`. They do not appear in `skipped`.
+
+### When every category reserves zero
+
+If billing applies and every requested category reserves `0` units, nothing is queued. The API returns `HTTP 400` with `Insufficient units for N unit(s) requested.` `skipped` is not returned on that response.
+
+The API also returns `HTTP 400` when reservation fails for the whole request. `desc` is then the team balance error.
+
+### When billing does not apply
+
+The send does not reserve WhatsApp bundle units when the team is not a sandbox team and the service is not Belio-managed. In that case `units` is `{}`, `skipped` is `[]`, and `addresses` equals the number of valid recipients.
+
+### Integration guidance
+
+<Warning>
+    Treat `HTTP 200` as acceptance of the request, not confirmation of delivery.
+    Read `skipped` on every success response. It is empty when every recipient was queued.
+</Warning>
+
+- Use `addresses` and `units` for what was queued and reserved on this request.
+- If `skipped` is not empty, retry those numbers after topping up that category, or send them on a service that has units.
+- Use `requestId` to match [delivery receipts](/messaging/whatsapp/delivery-receipt) for queued recipients only.

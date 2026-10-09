@@ -1,0 +1,26 @@
+---
+title: "Pricing"
+---
+
+WhatsApp billing uses two fields. Pricing category is which rate applies. Pricing type is whether that message was billable.
+
+## Pricing type
+
+| Value                 | Description                                                                                                                                                                                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Regular`             | The message is billable.                                                                                                                                                                                                                                      |
+| `FreeCustomerService` | The message is free. It was a utility template or a non-template message sent inside a customer service window. That window lasts 24 hours, opens when a WhatsApp user messages or calls your business, and resets on each new message or call from the user. |
+| `FreeEntryPoint`      | The message is free. It was sent inside an open free entry point window, which lasts 72 hours and opens when a WhatsApp user starts a conversation from a click-to-WhatsApp ad or a Facebook Page call-to-action button.                                      |
+
+## Pricing categories
+
+Reservation uses the template category. Marketing templates reserve `Marketing`. Utility templates reserve `Utility`. Authentication templates reserve `Authentication`.
+
+| Value                  | Description                         |
+| ---------------------- | ----------------------------------- |
+| `Authentication`       | Authentication template             |
+| `Marketing`            | Marketing message                   |
+| `MarketingLite`        | Marketing Messages API message      |
+| `ReferralConversation` | Free entry point conversation       |
+| `Service`              | Service message                     |
+| `Utility`              | Utility message                     |

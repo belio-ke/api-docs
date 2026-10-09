@@ -664,14 +664,30 @@
                           "format": "uuid"
                         },
                         "addresses": {
-                          "type": "integer"
+                          "type": "integer",
+                          "description": "Number of recipients accepted and queued"
                         },
                         "units": {
                           "type": "object",
-                          "description": "Credit units consumed per Pricing Category. Currently always {}."
+                          "description": "Units reserved per WhatsApp pricing category. Empty when this service does not debit WhatsApp bundles.",
+                          "additionalProperties": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "example": {
+                            "Authentication": 2
+                          }
+                        },
+                        "skipped": {
+                          "type": "array",
+                          "description": "Recipients that were neither reserved nor queued. Always present; empty when every recipient was accepted. Numbers are E.164.",
+                          "items": {
+                            "type": "string"
+                          },
+                          "example": []
                         }
                       },
-                      "required": ["type", "requestId", "addresses", "units"],
+                      "required": ["type", "requestId", "addresses", "units", "skipped"],
                       "additionalProperties": false
                     }
                   },
@@ -682,7 +698,7 @@
             }
           },
           "400": {
-            "description": "Bad request - invalid input parameters or template parameter validation failure",
+            "description": "Bad request. Invalid input, template parameter validation failure, or insufficient WhatsApp units.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1041,9 +1057,9 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["SMS", "DATA_BUNDLE"]
+              "enum": ["SMS", "DATA_BUNDLE", "WHATSAPP"]
             },
-            "description": "Type of product associated with the bundle e.g SMS, DATA_BUNDLE"
+            "description": "Product type whose bundles to list. SMS and DATA_BUNDLE balances are per mobile network. WHATSAPP balances are per pricing category."
           }
         ],
         "responses": {
@@ -1053,6 +1069,33 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BundlesResponse"
+                },
+                "example": {
+                  "desc": "OK",
+                  "result": [
+                    {
+                      "type": "SmsBundleResponse",
+                      "reference": "xyz-001",
+                      "band": "ENTERPRISE",
+                      "bandName": "ENTERPRISE",
+                      "balances": [
+                        {
+                          "type": "SmsBundleBalanceResponse",
+                          "id": 1,
+                          "channel": "Safaricom",
+                          "allotted": 1000,
+                          "balance": 8000,
+                          "reserved": 0,
+                          "expiry": "2025-12-24T18:17:23.674460173"
+                        }
+                      ],
+                      "rates": {
+                        "Safaricom": 0.348
+                      },
+                      "createdAt": "2024-11-18T10:49:34",
+                      "validity": "90 days"
+                    }
+                  ]
                 }
               }
             }
@@ -1531,8 +1574,12 @@
                   "properties": {
                     "type": {
                       "type": "string",
-                      "enum": ["DataBundleResponse", "SmsBundleResponse"],
-                      "description": "Type of product associated with the bundle"
+                      "enum": [
+                        "SmsBundleResponse",
+                        "DataBundleResponse",
+                        "WhatsAppBundleResponse"
+                      ],
+                      "description": "Bundle response type for the requested product"
                     },
                     "reference": {
                       "type": "string",
@@ -1556,7 +1603,7 @@
                     },
                     "rates": {
                       "type": "object",
-                      "description": "Pricing details for different networks",
+                      "description": "Unit price by network for SMS and data bundles, or by WhatsApp pricing category for WhatsApp bundles",
                       "properties": {
                         "Safaricom": {
                           "type": "number",
@@ -1567,7 +1614,26 @@
                           "type": "number",
                           "format": "float",
                           "description": "Price of the bundle for Airtel network"
+                        },
+                        "Marketing": {
+                          "type": "number",
+                          "format": "float",
+                          "description": "Unit price for the Marketing category. Present on WhatsApp bundles."
+                        },
+                        "Utility": {
+                          "type": "number",
+                          "format": "float",
+                          "description": "Unit price for the Utility category. Present on WhatsApp bundles."
+                        },
+                        "Authentication": {
+                          "type": "number",
+                          "format": "float",
+                          "description": "Unit price for authentication templates. Present on WhatsApp bundles."
                         }
+                      },
+                      "additionalProperties": {
+                        "type": "number",
+                        "format": "float"
                       }
                     },
                     "balances": {
@@ -1579,10 +1645,11 @@
                           "type": {
                             "type": "string",
                             "enum": [
+                              "SmsBundleBalanceResponse",
                               "DataBundleBalanceResponse",
-                              "SmsBundleBalanceResponse"
+                              "WhatsAppBundleBalanceResponse"
                             ],
-                            "description": "Type of product associated with the balance"
+                            "description": "Balance response type for the product"
                           },
                           "id": {
                             "type": "number",
@@ -1590,8 +1657,12 @@
                           },
                           "channel": {
                             "type": "string",
-                            "enum": ["Safaricom", "Airtel"],
-                            "description": "Network channel associated with the balance"
+                            "enum": ["Safaricom", "Airtel", "WhatsApp"],
+                            "description": "Channel associated with the balance. WhatsApp for WhatsAppBundleBalanceResponse."
+                          },
+                          "category": {
+                            "$ref": "#/components/schemas/WhatsAppPricingCategory",
+                            "description": "WhatsApp pricing category for this row. Present when type is WhatsAppBundleBalanceResponse."
                           },
                           "denomination": {
                             "type": "string",
@@ -1630,6 +1701,11 @@
                             "format": "float",
                             "description": "Amount reserved from the balance"
                           },
+                          "arrears": {
+                            "type": "number",
+                            "format": "float",
+                            "description": "Extra units owed on this WhatsApp category after a send settled at a higher price than the reserved category. Present when type is WhatsAppBundleBalanceResponse. Usually 0."
+                          },
                           "expiry": {
                             "type": "string",
                             "format": "date-time",
@@ -1652,6 +1728,28 @@
                       "format": "date-time",
                       "description": "Timestamp when the bundle was last updated"
                     }
+                  },
+                  "example": {
+                    "type": "SmsBundleResponse",
+                    "reference": "xyz-001",
+                    "band": "ENTERPRISE",
+                    "bandName": "ENTERPRISE",
+                    "balances": [
+                      {
+                        "type": "SmsBundleBalanceResponse",
+                        "id": 1,
+                        "channel": "Safaricom",
+                        "allotted": 1000,
+                        "balance": 8000,
+                        "reserved": 0,
+                        "expiry": "2025-12-24T18:17:23.674460173"
+                      }
+                    ],
+                    "rates": {
+                      "Safaricom": 0.348
+                    },
+                    "createdAt": "2024-11-18T10:49:34",
+                    "validity": "90 days"
                   }
                 }
               }
@@ -1701,10 +1799,9 @@
       },
       "WhatsAppPricingCategory": {
         "type": "string",
-        "description": "WhatsApp Business pricing category applied to this message/conversation.",
+        "description": "WhatsApp Business pricing category applied to this message or conversation.",
         "enum": [
           "Authentication",
-          "AuthenticationInternational",
           "Marketing",
           "MarketingLite",
           "ReferralConversation",

@@ -68,6 +68,7 @@
                 "tag": "BETA",
                 "pages": [
                   "messaging/whatsapp/introduction",
+                  "messaging/whatsapp/pricing",
                   {
                     "group": "Templates",
                     "pages": [

@@ -51,7 +51,7 @@ callbacks in sequence: `Sent`, `Delivered`, then `Read` or `Played` for voice me
 | `phone`          | string | Yes            | Recipient's phone number.                                                                                                                                                     |
 | `timestamp`      | string | Yes            | ISO 8601 timestamp for when the status event occurred, in UTC.                                                                                                                |
 | `deliveryStatus` | string | Yes            | Current delivery state. See [Delivery Status](#delivery-status-values) values.                                                                                                |
-| `pricing`        | object | No             | [Pricing type](#pricing-type-values) and [category](#pricing-category-values). Present on `Sent` and on one of either `Delivered` or `Read`, not both, and never on `Failed`. |
+| `pricing`        | object | No             | [Pricing type](/messaging/whatsapp/pricing#pricing-type) and [category](/messaging/whatsapp/pricing#pricing-categories). Present on `Sent` and on one of either `Delivered` or `Read`, not both, and never on `Failed`. |
 | `reason`         | string | No             | Human-readable error description. Only present when `deliveryStatus` is `Failed`.                                                                                             |
 | `reasonCode`     | string | No             | Numeric error code as a string. Only present when `deliveryStatus` is `Failed`.                                                                                               |
 
@@ -67,27 +67,7 @@ callbacks in sequence: `Sent`, `Delivered`, then `Read` or `Played` for voice me
 | `Failed`    | Red error triangle  | Message could not be sent or delivered                                         |
 | `Uncertain` | -                   | Delivery outcome is unknown; the message may or may not have been delivered    |
 
-### Pricing Type Values
-
-| Value                 | Description                                                                                                                                                                                                                                                                                                 |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Regular`             | Message is billable.                                                                                                                                                                                                                                                                                        |
-| `FreeCustomerService` | Message is free because it was either a utility template message or non-template message sent within a customer service window (A 24-hour window opened when a WhatsApp user messages or calls your Business. Each new message or call from the user resets the window, extending it for another 24 hours). |
-| `FreeEntryPoint`      | Message is free because it was sent within an open free entry point window (A 72-hr window opened when a WhatsApp user starts a conversation through click-to-WhatsApp ads or Facebook Page call-to-action buttons).                                                                                        |
-
-### Pricing Category Values
-
-| Value                         | Description                                         |
-| ----------------------------- | --------------------------------------------------- |
-| `Authentication`              | Authentication message                              |
-| `AuthenticationInternational` | Authentication message billed at international rate |
-| `Marketing`                   | Marketing message                                   |
-| `MarketingLite`               | Marketing Messages API message                      |
-| `ReferralConversation`        | Free entry point conversation                       |
-| `Service`                     | Service message                                     |
-| `Utility`                     | Utility message                                     |
-
-#### Examples
+### Examples
 
 - Delivered
 
