@@ -14,3 +14,154 @@ openapi: "GET /bundle/{productType}"
 ### Rate Limit
 
 This endpoint is rate limited to **1** request per second.
+
+## Product types
+
+The path parameter selects which product's bundles to return. Matching is case insensitive.
+
+| `productType` | Response `type`          | Balance `type`                  | How remaining units are stored                          |
+| ------------- | ------------------------ | ------------------------------- | ------------------------------------------------------- |
+| `SMS`         | `SmsBundleResponse`      | `SmsBundleBalanceResponse`      | Per mobile network (`Safaricom`, `Airtel`)              |
+| `DATA_BUNDLE` | `DataBundleResponse`     | `DataBundleBalanceResponse`     | Per mobile network, with a `denomination` such as `1GB` |
+| `WHATSAPP`    | `WhatsAppBundleResponse` | `WhatsAppBundleBalanceResponse` | Per WhatsApp pricing category on the `WhatsApp` channel |
+
+`rates` uses the same keys as the balances: network names for SMS and data, pricing categories for WhatsApp.
+
+## Bundle fields
+
+Each item in `result` has the same envelope.
+
+| Field       | Type     | Required | Description                                                                           |
+| ----------- | -------- | -------- | ------------------------------------------------------------------------------------- |
+| `type`      | string   | yes      | `SmsBundleResponse`, `DataBundleResponse`, or `WhatsAppBundleResponse`                |
+| `reference` | string   | yes      | Bundle ID                                                                             |
+| `band`      | string   | yes      | Bouquet band: `STARTER`, `STANDARD`, `ENTERPRISE`, `SANDBOX`, `CUSTOM`, or `PERSONAL` |
+| `bandName`  | string   | no       | Display name for the band                                                             |
+| `rates`     | object   | yes      | Unit price per network or per WhatsApp pricing category                               |
+| `balances`  | object[] | yes      | Remaining units. Shape depends on the product. See [Balances](#balances).             |
+| `validity`  | string   | no       | How long the bundle lasts, for example `90 days`. `null` when it does not expire.     |
+| `createdAt` | string   | yes      | When the bundle was created                                                           |
+| `updatedAt` | string   | no       | When the bundle was last updated. Omitted when it has never been updated.             |
+
+## Balances
+
+Every balance row includes `id`, `channel`, `balance`, `allotted`, `reserved`, and `expiry`. `balance` is what you can still spend. `reserved` is held for in-flight requests.
+
+The extra fields depend on the product:
+
+| Product  | Extra fields          | `channel`         |
+| -------- | --------------------- | ----------------- |
+| SMS      | None                  | Mobile network    |
+| Data     | `denomination`        | Mobile network    |
+| WhatsApp | `category`, `arrears` | Always `WhatsApp` |
+
+`denomination` is the data size on that row, for example `2GB`. `category` is the WhatsApp [pricing category](/messaging/whatsapp/pricing#pricing-categories). `arrears` is extra units owed after a send settled at a higher category than the one reserved. It is `0` when nothing is owed.
+
+## Examples
+
+<Tabs>
+    <Tab title="SMS">
+
+```json
+{
+  "desc": "OK",
+  "result": [
+    {
+      "type": "SmsBundleResponse",
+      "reference": "xyz-001",
+      "band": "ENTERPRISE",
+      "bandName": "ENTERPRISE",
+      "balances": [
+        {
+          "type": "SmsBundleBalanceResponse",
+          "id": 1,
+          "channel": "Safaricom",
+          "allotted": 1000,
+          "balance": 8000,
+          "reserved": 0,
+          "expiry": "2025-12-24T18:17:23.674460173"
+        }
+      ],
+      "rates": {
+        "Safaricom": 0.348
+      },
+      "createdAt": "2024-11-18T10:49:34",
+      "validity": "90 days"
+    }
+  ]
+}
+```
+
+    </Tab>
+    <Tab title="Data">
+
+```json
+{
+  "desc": "OK",
+  "result": [
+    {
+      "type": "DataBundleResponse",
+      "reference": "data-001",
+      "band": "PERSONAL",
+      "bandName": "BUSINESS",
+      "balances": [
+        {
+          "type": "DataBundleBalanceResponse",
+          "id": 2,
+          "channel": "Safaricom",
+          "denomination": "2GB",
+          "allotted": 100,
+          "balance": 50,
+          "reserved": 10,
+          "expiry": "2024-12-31T23:59:59"
+        }
+      ],
+      "rates": {
+        "Safaricom": 12.5
+      },
+      "createdAt": "2024-10-10T09:30:00",
+      "validity": "30 days"
+    }
+  ]
+}
+```
+
+    </Tab>
+    <Tab title="WhatsApp">
+
+```json
+{
+  "desc": "OK",
+  "result": [
+    {
+      "type": "WhatsAppBundleResponse",
+      "reference": "wa-001",
+      "band": "ENTERPRISE",
+      "bandName": "ENTERPRISE",
+      "balances": [
+        {
+          "type": "WhatsAppBundleBalanceResponse",
+          "id": 1,
+          "channel": "WhatsApp",
+          "category": "Marketing",
+          "balance": 1500,
+          "allotted": 2000,
+          "reserved": 0,
+          "arrears": 0,
+          "expiry": "2025-12-24T18:17:23.674460173"
+        }
+      ],
+      "rates": {
+        "Marketing": 0.58,
+        "Utility": 0.232
+      },
+      "createdAt": "2024-11-18T10:49:34",
+      "validity": "90 days"
+    }
+  ]
+}
+```
+
+    </Tab>
+
+</Tabs>
