@@ -81,7 +81,8 @@
                   "messaging/whatsapp/delivery-receipt"
                 ]
               },
-              "callbacks/security"
+              "callbacks/security",
+              "callbacks/circuit-breaker"
             ]
           },
           {
@@ -89,6 +90,7 @@
             "pages": [
               "ussd/introduction",
               "ussd/session-flow",
+              "ussd/callback-security",
               "ussd/belio-eats"
             ]
           },

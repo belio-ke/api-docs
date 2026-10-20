@@ -1,6 +1,7 @@
 ---
 title: "Session Flow"
 ---
+
 Every USSD session is a series of request-response interactions between the subscriber, Belio, and your application. Each time the subscriber enters a menu option, Belio sends a new `POST` request to your callback endpoint containing the complete input history for the current session. Your application processes the request and returns the next screen to display (`CON`) or ends the session (`END`).
 
 The diagram below illustrates a typical USSD session from the initial dial through multiple menu selections until the session is completed.
@@ -42,7 +43,7 @@ Your USSD application receives a JSON `POST` request for every subscriber intera
 ## Action Meaning
 
 | Action | Meaning                                             |
-|--------|-----------------------------------------------------|
+| ------ | --------------------------------------------------- |
 | `CON`  | Continue the session and show the next menu screen. |
 | `END`  | End the session and close the USSD dialog.          |
 
@@ -60,8 +61,9 @@ Belio sends the full input history on every request, not just the latest keystro
 - Re-process all inputs from scratch on each request, or use `sessionId` to load session state and determine which input is new.
 
 #### Sample expected responses from your application
+
 - Continue the session and show the next menu screen.
-This response tells Belio to keep the session open and show the subscriber the next menu screen.
+  This response tells Belio to keep the session open and show the subscriber the next menu screen.
 
 ```json
 {
@@ -69,7 +71,9 @@ This response tells Belio to keep the session open and show the subscriber the n
   "action": "CON"
 }
 ```
+
 - End the session and close the USSD dialog:
+
 ```json
 {
   "message": "Thank you for using our service.",
@@ -83,10 +87,7 @@ Configure the callback URL on your USSD service channel in the [Belio Cloud Port
 
 Belio sends a `POST` request to your callback URL with the session state for the current hop.
 
-```http
-POST {your-callback-url}
-Content-Type: application/json
-```
+If you generate an HMAC secret on the service channel, Belio also sends `X-Timestamp` and `X-Signature`. See [callback security](./callback-security).
 
 ### Request Payload
 
@@ -103,7 +104,7 @@ Belio forwards a `UssdForwardRequest` payload.
 ```
 
 | Field       | Type       | Description                                                                                              |
-|-------------|------------|----------------------------------------------------------------------------------------------------------|
+| ----------- | ---------- | -------------------------------------------------------------------------------------------------------- |
 | `type`      | string     | Always `UssdForwardRequest`.                                                                             |
 | `sessionId` | string     | Unique identifier for the USSD session. Stable for the lifetime of the session.                          |
 | `msisdn`    | string     | Subscriber phone number.                                                                                 |
@@ -122,14 +123,14 @@ Return HTTP `200` with a JSON body in the following shape:
 ```
 
 | Field     | Type   | Description                                                     |
-|-----------|--------|-----------------------------------------------------------------|
+| --------- | ------ | --------------------------------------------------------------- |
 | `message` | string | Text displayed to the subscriber. Use `\n` for line breaks.     |
 | `action`  | string | `CON` shows the next menu screen, `END` closes the USSD dialog. |
 
 ## Callback Requirements
 
 | Requirement      | Value                                            |
-|------------------|--------------------------------------------------|
+| ---------------- | ------------------------------------------------ |
 | HTTP status      | `200`                                            |
 | Content-Type     | `application/json`                               |
 | Response timeout | `5 seconds` by default, configurable server-side |
