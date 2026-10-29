@@ -20,20 +20,20 @@ The required `type` field selects one of four request modes. **Free-form** modes
 compose raw message text; **template** modes send a pre-approved template by
 referencing its `templateId` (see [SMS Templates](/messaging/sms/templates/introduction)).
 
-| `type`               | Kind      | Description                                            |
-| -------------------- | --------- | ----------------------------------------------------- |
-| `SendToEach`         | Free-form | Message tailored per recipient                        |
-| `SendToMany`         | Free-form | Same message sent to multiple recipients              |
-| `TemplateSendToEach` | Template  | Each recipient receives their own parameter values    |
-| `TemplateSendToMany` | Template  | One shared parameter set sent to multiple recipients  |
+| `type`               | Kind      | Description                                          |
+|----------------------|-----------|------------------------------------------------------|
+| `SendToEach`         | Free-form | Message tailored per recipient                       |
+| `SendToMany`         | Free-form | Same message sent to multiple recipients             |
+| `TemplateSendToEach` | Template  | Each recipient receives their own parameter values   |
+| `TemplateSendToMany` | Template  | One shared parameter set sent to multiple recipients |
 
 ### Limits
 
-| Rule                        | Free-form (`SendToEach` / `SendToMany`) | Template (`TemplateSendToEach` / `TemplateSendToMany`) |
-| --------------------------- | --------------------------------------- | ------------------------------------------------------ |
-| Maximum recipients per request | **100**                              | **10**                                                 |
-| Maximum message length      | **960** characters                      | **960** characters (after parameters are resolved)     |
-| SMS message unit size       | **160** characters                      | **160** characters                                     |
+| Rule                           | Free-form (`SendToEach` / `SendToMany`) | Template (`TemplateSendToEach` / `TemplateSendToMany`) |
+|--------------------------------|-----------------------------------------|--------------------------------------------------------|
+| Maximum recipients per request | **1-10**                               | **1-10**                                              |
+| Maximum message length         | **960** characters                      | **960** characters (after parameters are resolved)     |
+| SMS message unit size          | **160** characters                      | **160** characters                                     |
 
 ### Request Schemas
 
@@ -45,7 +45,7 @@ referencing its `templateId` (see [SMS Templates](/messaging/sms/templates/intro
         | Field            | Type     | Required | Description                        |
         | ---------------- | -------- | -------- | ----------------------------------- |
         | `type`           | string   | yes      | Must be `"SendToEach"`             |
-        | `messages`       | object[] | yes      | Per-recipient entries (**1–100**)  |
+        | `messages`       | object[] | yes      | Per-recipient entries (**1–10**)  |
         | `receiptRequest` | object   | no       | Optional delivery receipt callback |
 
         Each item in `messages`:
@@ -83,7 +83,7 @@ referencing its `templateId` (see [SMS Templates](/messaging/sms/templates/intro
         | Field            | Type     | Required | Description                                    |
         | ---------------- | -------- | -------- | ----------------------------------------------- |
         | `type`           | string   | yes      | Must be `"SendToMany"`                          |
-        | `addresses`      | string[] | yes      | Recipient phone numbers (**1–100**)             |
+        | `addresses`      | string[] | yes      | Recipient phone numbers (**1–10**)             |
         | `message`        | string   | yes      | Message text (max **960** characters)           |
         | `receiptRequest` | object   | no       | Optional delivery receipt callback              |
 
@@ -205,7 +205,7 @@ referencing its `templateId` (see [SMS Templates](/messaging/sms/templates/intro
 | ---- | -------------------------- | ---------------------------------------------------------------------------------------------- |
 | 400  | Invalid phone numbers      | `Invalid phone numbers: ...`                                                                    |
 | 400  | Empty addresses / messages | `No valid recipients found...` or `No valid messages found...`                                  |
-| 400  | Too many recipients        | `Maximum number of recipients exceeded.` (100 for free-form, 10 for template modes)            |
+| 400  | Too many recipients        | `Maximum number of recipients exceeded.` (10 for both free-form and template modes)            |
 | 400  | Template not found         | `Message template tpl-sms-001 not found.`                                                       |
 | 400  | Template not sendable      | `Message template tpl-sms-001 is not sendable. Current status: Active and approval status: PENDING` |
 | 400  | Managed service not found  | `Managed service descriptor not found for key: otp-service`. See [Belio-managed Senders and Approval](/messaging/sms/templates/introduction#belio-managed-senders-and-approval). |
