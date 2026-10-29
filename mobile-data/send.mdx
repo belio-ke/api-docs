@@ -3,24 +3,256 @@ title: "Disburse Data"
 openapi: "POST /data/{campaignId}"
 ---
 
+Send mobile data bundles to recipients through the active data channels configured for a campaign.
+
 <Note>
     Refer to [Authentication](/authentication) for information on how to obtain a
-    Bearer token. This endpoint requires the `reward.mobile-data.disburse` API
-    client authorization scope to disburse mobile data. You can set up scopes on
-    the [API Clients](https://cloud.belio.co.ke/team-overview/api-access-keys)
-    page.
+    bearer token. This endpoint requires the `reward.mobile-data.disburse` API client
+    authorization scope to disburse mobile data. You can set up scopes on the
+    [API Clients](https://cloud.belio.co.ke/team-overview/api-access-keys) page.
 </Note>
 
 ### Rate Limit
 
-This endpoint is rate limited to **400** disbursements per second.
+This endpoint is rate limited to **400** messages per second.
 
-## Request Modes
+## Request modes
 
-The API supports two request modes:
+The `type` field determines how recipients are handled:
 
-- `SendToMany` — same data amount (and optional SMS message) sent to multiple recipients
-- `SendToEach` — individual data amounts and optional messages per recipient
+| Type         | Behaviour                                               |
+|--------------|---------------------------------------------------------|
+| `SendToMany` | Send the same data denomination to multiple recipients. |
+| `SendToEach` | Specify disbursement details for each recipient.        |
 
-Both modes support a maximum of **100** recipients per request and the optional message is limited to not more than **960** characters .
+Both request types support up to **100 recipients**. Optional SMS messages must not exceed **960 characters**. Request fields and request schemas are unchanged by this update.
 
+### Example requests
+
+<Tabs>
+    <Tab title="SendToMany">
+        Use this mode when every recipient should receive the same denomination.
+
+        ```bash
+        curl --request POST \
+        --url https://api.belio.co.ke/data/{campaignId} \
+        --header 'Authorization: Bearer <token>' \
+        --header 'Content-Type: application/json' \
+        --data '
+          {
+            "type": "SendToMany",
+            "disbursements": [
+              {
+                "phones": ["0712345678","0712345677"],
+              }
+            ],
+            "denomination": "10MB"
+          }'
+        ```
+    </Tab>
+    <Tab title="SendToEach">
+        Use this mode when each recipient needs individual disbursement details.
+
+        The exact recipient field names depend on the configured `SendToEach` request schema. The following is an
+        illustrative structure; replace the placeholder field names with those defined by your schema before using it.
+
+        ```bash
+        curl --request POST \
+        --url https://api.belio.co.ke/data/{campaignId} \
+        --header 'Authorization: Bearer <token>' \
+        --header 'Content-Type: application/json' \
+        --data '
+          {
+            "type": "SendToEach",
+            "disbursements": [
+              {
+               "phone": "0712345678",
+               "denomination": "20MB"
+              }
+           ]
+          }'
+        ```
+    </Tab>
+    <Tab title="SendToMany + sms">
+        Use this mode when every recipient should receive the same denomination.
+
+        ```bash
+        curl --request POST \
+        --url https://api.belio.co.ke/data/{campaignId} \
+        --header 'Authorization: Bearer <token>' \
+        --header 'Content-Type: application/json' \
+        --data '
+          {
+            "type": "SendToMany",
+              "phones": ["+254712345678", "+254701234567"],
+            "denomination": "1GB",
+            "messaging": {
+              "message": "Your 1GB bundle has been credited.",
+              "serviceSelection": { "type": "DefaultService" }
+            }
+          }
+        '
+        ```
+    </Tab>
+    <Tab title="SendToEach + sms">
+        Use this mode when each recipient needs individual disbursement details with an accompanying message .
+
+        The exact recipient field names depend on the configured `SendToEach` request schema. The following is an
+        illustrative structure; replace the placeholder field names with those defined by your schema before using it.
+
+        ```bash
+        curl --request POST \
+        --url https://api.belio.co.ke/data/{campaignId} \
+        --header 'Authorization: Bearer <token>' \
+        --header 'Content-Type: application/json' \
+        --data '
+          {
+            "type": "SendToEach",
+            "messaging": {
+            "serviceSelection": { "type": "SelfService", "serviceId": "svc_123" }
+            },
+            "disbursements": [
+              { "phone": "+254712345678", "denomination": "2GB", "message": "You’ve received 2GB data." },
+              { "phone": "+254701234567", "denomination": "500MB", "message":"You've received 500MB data" }
+            ]
+          }'
+        ```
+    </Tab>
+</Tabs>
+
+## Successful response
+
+A successful request returns`200 OK`.The`units` and`addresses` fields summarize the disbursements by channel.
+
+```json
+{
+  "desc": "OK",
+  "result": {
+    "type": "DisbursementResponse",
+    "requestId": "550e8400-e29b-41d4-a716-446655440000",
+    "units": {
+      "Safaricom": {
+        "500MB": 3
+      }
+    },
+    "addresses": {
+      "Safaricom": 3
+    },
+    "skipped": []
+  }
+}
+```
+
+### Response fields
+
+| Field       | Type         | Description                                                                         |
+|-------------|--------------|-------------------------------------------------------------------------------------|
+| `requestId` | UUID string  | Identifier for this disbursement request.                                           |
+| `units`     | object       | Units by channel and denomination.                                                  |
+| `addresses` | object       | Number of disbursements queued per channel.                                         |
+| `skipped`   | string array | Recipients that were not disbursed.See [Skipped recipients](#skipped - recipients). |
+
+`skipped` is always included.When every recipient is processed, it is an empty array(`[]`).
+
+## Skipped recipients
+
+A recipient can be skipped without failing the entire request.The endpoint returns`200 OK` when some or all recipients are skipped, as long as the request itself passes validation.
+
+A recipient is skipped when:
+
+- **No matching active data channel**: The recipient's network or phone-number pattern does not match an active channel configured for mobile data.
+- **No units available**: A matching channel has zero units available for the requested denomination.The affected recipient is not included in `addresses` and is added to`skipped`.
+
+Only active channels with product type`DATA_BUNDLE` are used for routing.Inactive channels and non - data channels, such as SMS - only mappings, are ignored.
+
+Phone numbers in `skipped` retain the original value supplied in the request; they are not returned in a normalized format.Invalid phone numbers are not included in `skipped` and still cause`400 Bad Request`.
+
+### Partial success
+
+When some recipients can be routed and others cannot, the routable recipients are processed.The remaining phone numbers are returned in `skipped`.
+
+```json
+{
+  "desc": "OK",
+  "result": {
+    "type": "DisbursementResponse",
+    "requestId": "550e8400-e29b-41d4-a716-446655440000",
+    "units": {
+      "Safaricom": {
+        "500MB": 2
+      }
+    },
+    "addresses": {
+      "Safaricom": 2
+    },
+    "skipped": [
+      "254750108109"
+    ]
+  }
+}
+```
+
+In this example, two disbursements were queued through Safaricom and one recipient was skipped.
+
+### All recipients skipped
+
+If no recipient matches an active data channel, the request still returns`200 OK`.No units are reserved and no disbursements are queued.
+
+```json
+{
+  "desc": "OK",
+  "result": {
+    "type": "DisbursementResponse",
+    "requestId": "550e8400-e29b-41d4-a716-446655440000",
+    "units": {},
+    "addresses": {},
+    "skipped": [
+      "101251193",
+      "+254750108109"
+    ]
+  }
+}
+```
+
+### Zero units available
+
+If the channel matches but has no units available for the denomination, affected recipients are skipped.The channel may appear with a unit count of`0`, while `addresses` excludes that channel.
+
+```json
+{
+  "desc": "OK",
+  "result": {
+    "type": "DisbursementResponse",
+    "requestId": "550e8400-e29b-41d4-a716-446655440000",
+    "units": {
+      "Safaricom": {
+        "500MB": 0
+      }
+    },
+    "addresses": {},
+    "skipped": [
+      "700111213",
+      "700111214"
+    ]
+  }
+}
+```
+
+The response does not include a reason for each skipped phone number.A zero in `units` can indicate that the matched channel had no units available; otherwise, check whether an active data channel supports the recipient.
+
+## Errors
+
+The following cases continue to return `400 Bad Request`:
+
+- Invalid phone numbers, for example`Invalid phone numbers: …`.
+- Request validation failures, including an empty recipient list or too many recipients.
+- Insufficient balance when the balance check for the routable recipients fails.
+
+Errors return a`desc` message.They do not return the normal successful response.
+
+## Integration Guidance
+
+- Always read`result.skipped` on successful responses.
+- Do not assume`200 OK` means every recipient received a disbursement.If`skipped` is non - empty, show the skipped phone numbers to the user or operator.
+- Treat an all - skipped response as a valid API response, not an error.
+- Use`units` and`addresses` to summarize disbursements by channel.These fields contain counts, not individual phone numbers; use`skipped` to identify recipients that were not disbursed.
