@@ -107,3 +107,8 @@ Correlator is supplied by the client as part of the receiptRequest.
     Callback endpoints must return **HTTP 200 OK** to acknowledge receipt. Failure to do so may trigger retry behavior
     depending on delivery policies.
 </Note>
+
+<Note>
+  Verify receipts with [callback security](/callbacks/security). If posts stop
+  arriving, check the [circuit breaker](/callbacks/circuit-breaker).
+</Note>

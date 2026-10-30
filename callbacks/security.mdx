@@ -1,22 +1,22 @@
 ---
-title: Callback Security & Reliability
-description: Learn how to verify signed callbacks/webhooks (delivery receipts), restrict access via IP whitelisting, and how our circuit breaker protects your endpoint from cascading failures.
+title: Callback security
+description: HMAC signing and IP whitelisting for delivery-receipt callbacks.
 ---
 
-## HMAC Request Signing
+SMS, WhatsApp, and mobile data delivery receipts are signed with HMAC-SHA256 using your API client secret. You can also restrict your endpoint to Belio's outbound IPs.
 
-Every callback we send to your endpoint is signed using **HMAC-SHA256**. This lets you verify that the request genuinely came from us and has not been tampered with.
+If receipts stop arriving, the URL may have tripped the [circuit breaker](/callbacks/circuit-breaker).
 
-### Signature Headers
+## HMAC signing
 
-Each signed callback includes two additional HTTP headers:
+Each signed callback includes two extra HTTP headers:
 
 | Header        | Description                                                         |
 | ------------- | ------------------------------------------------------------------- |
 | `X-Timestamp` | Unix epoch seconds at the time the request was sent                 |
 | `X-Signature` | HMAC-SHA256 signature in the format `sha256=<base64-encoded-value>` |
 
-### How the Signature Is Computed
+### How the signature is computed
 
 The signature is computed over the timestamp and the raw request body:
 
@@ -24,18 +24,16 @@ $$
 \text{HMAC-SHA256}(\text{api\_client\_secret},\ \texttt{"\{X\text{-}Timestamp\}.\{body\}"})
 $$
 
-where `body` is the **exact JSON string** of the request body (no reformatting or whitespace changes).
+`body` is the exact JSON string of the request body. Do not reformat or change whitespace.
 
-### Verifying the Signature
-
-Follow these steps in your callback handler to authenticate each inbound request:
+### Verify the signature
 
 <Steps>
   <Step title="Read the headers">
     Extract the `X-Timestamp` and `X-Signature` headers from the incoming request.
   </Step>
   <Step title="Check the timestamp">
-    Reject the request if `X-Timestamp` is too old or too far in the future (we recommend a 5-minute tolerance window). This protects against replay attacks where an attacker resends a previously captured request.
+    Reject the request if `X-Timestamp` is more than 5 minutes off from your clock. That limits replay of a captured request.
   </Step>
   <Step title="Recompute the signature">
     Using your API client secret (UTF-8 encoded), compute:
@@ -44,21 +42,21 @@ Follow these steps in your callback handler to authenticate each inbound request
     HMAC-SHA256("{X-Timestamp}.{raw request body}")
     ```
 
-    Make sure you use the **raw, unmodified** request body bytes — do not parse and re-serialize the JSON.
+    Use the raw request body bytes. Do not parse and re-serialize the JSON.
 
   </Step>
-  <Step title="Compare the signatures">
-    Base64-encode your computed HMAC, then compare it against the value in `X-Signature` (strip the `sha256=` prefix first). If they match, the request is authentic. If they don't match, reject it with `401 Unauthorized`.
+  <Step title="Compare">
+    Base64-encode your computed HMAC, then compare it against the value in `X-Signature` after stripping the `sha256=` prefix. If they match, handle the receipt. If they don't, reject it with `401 Unauthorized`.
   </Step>
 </Steps>
 
 <Note>
-  When you regenerate your API client secret, signed callbacks may continue to
-  be generated with your previous secret for up to **5 minutes**. During this
-  propagation window, verify signatures against both the old and new secrets.
+  After you regenerate your API client secret, signed callbacks may still use
+  the previous secret for up to 5 minutes. During that window, verify against
+  both secrets.
 </Note>
 
-### Code Examples
+### Code examples
 
 <CodeGroup>
 
@@ -332,85 +330,16 @@ verifyCallback apiClientSecret timestampHeader signatureHeader rawBody =
 </CodeGroup>
 
 <Warning>
-  Always use a **timing-safe comparison** (e.g. `crypto.timingSafeEqual`,
-  `hmac.compare_digest`, `hash_equals`) when comparing signatures. Regular
-  string equality is vulnerable to timing attacks.
+  Compare signatures with a timing-safe function such as
+  `crypto.timingSafeEqual`, `hmac.compare_digest`, or `hash_equals`. Ordinary
+  string equality can leak whether the first bytes matched.
 </Warning>
 
----
+## IP whitelisting
 
-## IP Whitelisting
-
-As an additional layer of defense, you can restrict your callback endpoint to only accept inbound requests from our IP address ranges. Any request arriving from an address outside this list can be rejected at the network or application level before your handler code even runs.
-
-### Our Callback IP Ranges
-
-All outbound callback requests originate from the following IP addresses:
+You can reject requests that do not come from these addresses, at the network or in your handler. The same IPs send USSD callbacks.
 
 | IP Address     | Role     | Location                     |
 | -------------- | -------- | ---------------------------- |
 | `88.99.209.40` | Primary  | Falkenstein, Saxony, Germany |
 | `94.130.34.45` | Failover | Falkenstein, Saxony, Germany |
-
----
-
-## Circuit Breaking for Unreachable Callback URLs
-
-To protect both your infrastructure and ours from cascading failures, we apply a **per-URL circuit breaker** to all outbound callbacks. If your endpoint becomes temporarily unavailable, the circuit breaker automatically backs off and retries without flooding your server.
-
-### Circuit Breaker States
-
-Each callback URL you register gets its own independent circuit breaker with three states:
-
-| State                     | Behaviour                                                                                              |
-| ------------------------- | ------------------------------------------------------------------------------------------------------ |
-| **Closed** _(normal)_     | Callbacks are delivered as usual                                                                       |
-| **Open** _(tripped)_      | Callbacks to this URL are silently skipped — your endpoint is not contacted                            |
-| **Half-Open** _(testing)_ | One test callback is attempted; success closes the circuit, failure re-opens it with increased backoff |
-
-```mermaid
-stateDiagram-v2
-    [*] --> Closed
-    Closed --> Open: consecutive failures ≥ max failures
-    Open --> HalfOpen: reset timeout elapsed
-    HalfOpen --> Closed: test request succeeds
-    HalfOpen --> Open: test request fails
-```
-
-### Configuration
-
-The circuit breaker behaviour is governed by the following parameters:
-
-| Parameter                | Default      | Description                                                                                           |
-| ------------------------ | ------------ | ----------------------------------------------------------------------------------------------------- |
-| **Max failures**         | `5`          | Number of consecutive failures within a call timeout window before the circuit opens                  |
-| **Reset timeout**        | `1 minute`   | How long the circuit stays open before moving to half-open and attempting a test request              |
-| **Max reset timeout**    | `10 minutes` | Upper bound on the reset timeout regardless of how many times backoff has multiplied it               |
-| **Backoff factor**       | `2.0`        | Multiplier applied to the reset timeout on each successive failure — e.g. 1 min → 2 min → 4 min → …   |
-| **Randomization factor** | `0.2`        | Adds ±20 % jitter to each reset timeout to prevent synchronized reconnect storms across multiple URLs |
-| **Call timeout**         | `5 seconds`  | How long we wait for your endpoint to respond before counting the attempt as a failure                |
-
-### Backoff Sequence
-
-With the default settings, successive circuit opens produce the following reset timeouts (before jitter is applied):
-
-| Open # | Reset timeout             |
-| ------ | ------------------------- |
-| 1st    | 1 minute                  |
-| 2nd    | 2 minutes                 |
-| 3rd    | 4 minutes                 |
-| 4th    | 8 minutes                 |
-| 5th +  | **10 minutes** _(capped)_ |
-
-<Note>
-  The ±20 % jitter means the actual wait time varies slightly around each value
-  above — for example, a 4-minute timeout becomes somewhere between **3 min 12
-  s** and **4 min 48 s**. This prevents multiple circuit breakers from all
-  attempting recovery at exactly the same moment.
-</Note>
-
-### Recommendations
-
-- **Return HTTP 200 quickly.** Acknowledge the callback as soon as you receive it and process it asynchronously. This keeps your response time well under the 5-second call timeout.
-- **Keep your endpoint healthy.** A single URL accumulates failures independently — a slow endpoint will trip its own breaker without affecting other URLs you have registered.
-- **Monitor for silent skips.** While the circuit is open, callbacks are not delivered and are not retried after the circuit closes. Make sure your integration does not rely solely on callbacks for critical state updates.

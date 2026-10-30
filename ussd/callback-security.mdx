@@ -1,0 +1,322 @@
+---
+title: "Callback security"
+description: HMAC signing and IP whitelisting for USSD session callbacks.
+---
+
+Belio can sign each USSD callback with HMAC-SHA256. Signing is optional. Until you generate a secret, callbacks are sent with `Content-Type` only.
+
+This is not your API client secret. Messaging delivery receipts use that secret. USSD uses a separate HMAC secret on the service channel. See [callback security](/callbacks/security) for delivery receipts.
+
+You can also reject traffic that does not come from Belio's outbound IPs.
+
+## HMAC signing
+
+Open the callback secret dialog on your USSD service in the [Belio Cloud Portal](https://cloud.belio.co.ke/services/). Generate a HMAC secret there.
+
+The plaintext secret is shown once. Copy it and store it with your application. Generating again rotates the secret. The previous value stops working immediately.
+
+After a secret exists, every `POST` to your callback URL includes:
+
+| Header        | Description                                                         |
+| ------------- | ------------------------------------------------------------------- |
+| `X-Timestamp` | Unix epoch seconds when Belio sent the request                      |
+| `X-Signature` | HMAC-SHA256 signature in the format `sha256=<base64-encoded-value>` |
+
+### How the signature is computed
+
+The HMAC key is the secret you copied from the portal. The message is the timestamp, a dot, then the raw JSON body:
+
+$$
+\text{HMAC-SHA256}(\text{hmac\_secret},\ \texttt{"\{X\text{-}Timestamp\}.\{body\}"})
+$$
+
+`body` is the exact JSON string Belio posts. Do not parse and re-serialize it before verifying.
+
+The digest is standard Base64, not URL-safe Base64.
+
+### Verify the signature
+
+<Steps>
+  <Step title="Read the headers">
+    Extract `X-Timestamp` and `X-Signature` from the incoming request. If they are missing, reject the request when you expect signed traffic.
+  </Step>
+  <Step title="Check the timestamp">
+    Reject the request if `X-Timestamp` is more than 5 minutes off from your clock. That limits replay of a captured request.
+  </Step>
+  <Step title="Recompute the signature">
+    Using your USSD HMAC secret as UTF-8 bytes, compute:
+
+    ```
+    HMAC-SHA256("{X-Timestamp}.{raw request body}")
+    ```
+
+    Use the raw request body bytes. Do not pretty-print or reorder JSON fields.
+
+  </Step>
+  <Step title="Compare">
+    Base64-encode your digest, strip the `sha256=` prefix from `X-Signature`, and compare. On a match, handle the session hop. On a mismatch, respond with `401 Unauthorized`.
+  </Step>
+</Steps>
+
+<Warning>
+  Compare signatures with a timing-safe function such as
+  `crypto.timingSafeEqual`, `hmac.compare_digest`, or `hash_equals`. Ordinary
+  string equality can leak whether the first bytes matched.
+</Warning>
+
+### Code examples
+
+<CodeGroup>
+
+```scala Scala
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
+import java.util.Base64
+import scala.util.Try
+
+def verifyUssdCallback(
+    hmacSecret: String,
+    timestampHeader: String,
+    signatureHeader: String,
+    rawBody: String
+): Boolean = {
+  def hmac(payload: String): String = {
+    val mac = Mac.getInstance("HmacSHA256")
+    mac.init(new SecretKeySpec(hmacSecret.getBytes("UTF-8"), "HmacSHA256"))
+    Base64.getEncoder.encodeToString(mac.doFinal(payload.getBytes("UTF-8")))
+  }
+
+  Try {
+    val timestamp = timestampHeader.toLong
+    val now       = System.currentTimeMillis() / 1000L
+    val isFresh   = math.abs(now - timestamp) <= 300
+    val expected  = hmac(s"$timestampHeader.$rawBody")
+    val received  = signatureHeader.stripPrefix("sha256=")
+    isFresh && expected == received
+  }.getOrElse(false)
+}
+```
+
+```typescript Node.js
+import * as crypto from "crypto";
+
+const verifyUssdCallback = (
+  hmacSecret: string,
+  timestampHeader: string,
+  signatureHeader: string,
+  rawBody: string,
+): boolean => {
+  const isFresh = (ts: string): boolean => {
+    const t = parseInt(ts, 10);
+    return !isNaN(t) && Math.abs(Math.floor(Date.now() / 1000) - t) <= 300;
+  };
+
+  const computeHmac = (payload: string): string =>
+    crypto
+      .createHmac("sha256", hmacSecret)
+      .update(payload, "utf8")
+      .digest("base64");
+
+  const timingSafeEqual = (a: string, b: string): boolean =>
+    a.length === b.length &&
+    crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+
+  return (
+    isFresh(timestampHeader) &&
+    timingSafeEqual(
+      computeHmac(`${timestampHeader}.${rawBody}`),
+      signatureHeader.replace(/^sha256=/, ""),
+    )
+  );
+};
+```
+
+```python Python
+import hmac
+import hashlib
+import base64
+import time
+
+def verify_ussd_callback(
+    hmac_secret: str,
+    timestamp_header: str,
+    signature_header: str,
+    raw_body: str,
+) -> bool:
+    def is_fresh(ts: str) -> bool:
+        try:
+            return abs(time.time() - int(ts)) <= 300
+        except ValueError:
+            return False
+
+    def compute_hmac(payload: str) -> str:
+        return base64.b64encode(
+            hmac.new(
+                hmac_secret.encode("utf-8"),
+                payload.encode("utf-8"),
+                hashlib.sha256,
+            ).digest()
+        ).decode()
+
+    return is_fresh(timestamp_header) and hmac.compare_digest(
+        compute_hmac(f"{timestamp_header}.{raw_body}"),
+        signature_header.removeprefix("sha256="),
+    )
+```
+
+```php PHP
+function verifyUssdCallback(
+    string $hmacSecret,
+    string $timestampHeader,
+    string $signatureHeader,
+    string $rawBody
+): bool {
+    $isFresh = static fn(string $ts): bool =>
+        abs(time() - (int) $ts) <= 300;
+
+    $computeHmac = static fn(string $payload): string =>
+        base64_encode(hash_hmac('sha256', $payload, $hmacSecret, true));
+
+    return $isFresh($timestampHeader) && hash_equals(
+        $computeHmac("{$timestampHeader}.{$rawBody}"),
+        preg_replace('/^sha256=/', '', $signatureHeader)
+    );
+}
+```
+
+```java Java
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.util.Base64;
+import java.util.Optional;
+import java.util.function.Function;
+import java.nio.charset.StandardCharsets;
+
+public boolean verifyUssdCallback(
+    String hmacSecret,
+    String timestampHeader,
+    String signatureHeader,
+    String rawBody
+) {
+    Function<String, String> computeHmac = payload -> {
+        try {
+            var mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(
+                hmacSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"
+            ));
+            return Base64.getEncoder().encodeToString(
+                mac.doFinal(payload.getBytes(StandardCharsets.UTF_8))
+            );
+        } catch (Exception e) {
+            return "";
+        }
+    };
+
+    try {
+        return Optional.of(Long.parseLong(timestampHeader))
+            .filter(ts -> Math.abs(System.currentTimeMillis() / 1000L - ts) <= 300)
+            .map(__ -> computeHmac.apply(timestampHeader + "." + rawBody))
+            .map(expected -> expected.equals(signatureHeader.replaceFirst("^sha256=", "")))
+            .orElse(false);
+    } catch (NumberFormatException e) {
+        return false;
+    }
+}
+```
+
+```go Go
+import (
+    "crypto/hmac"
+    "crypto/sha256"
+    "encoding/base64"
+    "math"
+    "strconv"
+    "strings"
+    "time"
+)
+
+func verifyUssdCallback(
+    hmacSecret, timestampHeader, signatureHeader, rawBody string,
+) bool {
+    isFresh := func(ts string) bool {
+        timestamp, err := strconv.ParseInt(ts, 10, 64)
+        return err == nil && math.Abs(float64(time.Now().Unix()-timestamp)) <= 300
+    }
+
+    computeHmac := func(payload string) string {
+        mac := hmac.New(sha256.New, []byte(hmacSecret))
+        mac.Write([]byte(payload))
+        return base64.StdEncoding.EncodeToString(mac.Sum(nil))
+    }
+
+    return isFresh(timestampHeader) && hmac.Equal(
+        []byte(computeHmac(timestampHeader+"."+rawBody)),
+        []byte(strings.TrimPrefix(signatureHeader, "sha256=")),
+    )
+}
+```
+
+```elixir Elixir
+defmodule UssdCallbackVerifier do
+  @max_age_seconds 300
+
+  def verify_callback(hmac_secret, timestamp_header, signature_header, raw_body) do
+    with {timestamp, _} <- Integer.parse(timestamp_header),
+         true <- fresh?(timestamp) do
+      "#{timestamp_header}.#{raw_body}"
+      |> compute_hmac(hmac_secret)
+      |> Plug.Crypto.secure_compare(String.replace_prefix(signature_header, "sha256=", ""))
+    else
+      _ -> false
+    end
+  end
+
+  defp fresh?(timestamp),
+    do: abs(System.os_time(:second) - timestamp) <= @max_age_seconds
+
+  defp compute_hmac(payload, secret),
+    do: :crypto.mac(:hmac, :sha256, secret, payload) |> Base.encode64()
+end
+```
+
+```haskell Haskell
+module UssdCallbackVerifier (verifyUssdCallback) where
+
+import Control.Monad                 (guard)
+import Control.Monad.IO.Class        (liftIO)
+import Control.Monad.Trans.Maybe     (MaybeT (..), runMaybeT)
+import Crypto.Hash.Algorithms        (SHA256)
+import Crypto.MAC.HMAC               (HMAC, hmac)
+import Data.ByteArray.Encoding       (Base (Base64), convertToBase)
+import Data.ByteString               (ByteString)
+import qualified Data.ByteString.Char8 as BC
+import Data.Maybe                    (isJust)
+import Data.Time.Clock.POSIX         (getPOSIXTime)
+
+verifyUssdCallback
+    :: ByteString  -- ^ USSD HMAC secret
+    -> ByteString  -- ^ X-Timestamp header value
+    -> ByteString  -- ^ X-Signature header value
+    -> ByteString  -- ^ Raw request body
+    -> IO Bool
+verifyUssdCallback hmacSecret timestampHeader signatureHeader rawBody =
+    isJust <$> runMaybeT (do
+        now <- liftIO $ round <$> getPOSIXTime
+        let timestamp = read (BC.unpack timestampHeader) :: Int
+        guard $ abs (now - timestamp) <= 300
+        let expected = convertToBase Base64
+                         (hmac hmacSecret (timestampHeader <> "." <> rawBody) :: HMAC SHA256)
+            received = BC.drop 7 signatureHeader
+        guard $ expected == received)
+```
+
+</CodeGroup>
+
+## IP whitelisting
+
+You can reject requests that do not come from these addresses, at the network or in your handler. The same IPs send messaging and mobile data callbacks.
+
+| IP Address     | Role     | Location                     |
+| -------------- | -------- | ---------------------------- |
+| `88.99.209.40` | Primary  | Falkenstein, Saxony, Germany |
+| `94.130.34.45` | Failover | Falkenstein, Saxony, Germany |

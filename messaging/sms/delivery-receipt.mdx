@@ -115,3 +115,8 @@ It must be included in the SMS message request body when sending a message to re
     causes the entire request to be rejected with `400 Bad Request` before any
     messages are dispatched.
 </Warning>
+
+<Note>
+  Verify receipts with [callback security](/callbacks/security). If posts stop
+  arriving, check the [circuit breaker](/callbacks/circuit-breaker).
+</Note>
