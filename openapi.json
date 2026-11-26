@@ -1232,6 +1232,49 @@
                       "default": "Draft",
                       "description": "Status of the service"
                     },
+                    "ownership": {
+                      "description": "SMS sender ownership. TeamOwned senders have no key; BelioManaged senders include their managed-service key.",
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "TeamOwned"
+                            }
+                          },
+                          "required": ["type"],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "BelioManaged"
+                            },
+                            "key": {
+                              "type": "string",
+                              "description": "Belio-managed service key, such as otp-service"
+                            }
+                          },
+                          "required": ["type", "key"],
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "messagingPolicy": {
+                      "type": "object",
+                      "description": "Messaging policy used to determine compatible SMS templates.",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": ["Standard", "PoliticalCampaign"]
+                        }
+                      },
+                      "required": ["type"],
+                      "additionalProperties": false
+                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time",
