@@ -19,14 +19,20 @@ Controlled by you. Indicates whether the template is archived.
 
 ### Approval Status
 
-Belio's review lifecycle for the template. This only meaningfully progresses through review states when the template is linked to a Belio-managed sender. Unlinked templates are usable immediately (see [Belio-managed Senders and Approval](/messaging/sms/templates/introduction#belio-managed-senders-and-approval)).
+Belio's review lifecycle for the template. Whether a review state is required
+for sending depends on the template scope and the sender used.
 
 | Approval Status | Description                                                          |
 | --------------- | ------------------------------------------------------------------- |
-| `PENDING`       | Template is under review by Belio (applicable to templates linked to a managed sender) |
-| `APPROVED`      | Template is approved and can be used for sending messages            |
-| `REJECTED`      | Template was rejected and cannot be used                            |
+| `PENDING`       | Template is under review by Belio |
+| `APPROVED`      | Template is approved |
+| `FLAGGED`       | Template is flagged; eligibility depends on the sender and scope |
+| `REJECTED`      | Template was rejected and cannot be used |
 
 <Tip>
-    Only templates with `status: Active` and, if linked to a managed sender, `approvalStatus: APPROVED`, can be used for sending.
+    A template must have `status: Active`. Required approval depends on the
+    sender: standard team-owned and matching Belio-managed senders may accept
+    `APPROVED` or `FLAGGED` managed templates, while political campaign sends
+    require an approved political team template. See
+    [SMS sending](/messaging/sms/send#sender-and-template-eligibility).
 </Tip>

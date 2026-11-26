@@ -18,14 +18,24 @@ the image below.
 - API client authorization - This endpoint requires the `message.sms.send.oneway` API client authorization scope to send one way
 sms messages. You can set up scopes on the [API Clients](https://cloud.belio.co.ke/team-overview/api-access-keys) page.
 
-## Sender Types
+## Sender ownership and messaging policy
 
-SMS messages are sent using one of two sender types:
+SMS sender ownership and messaging policy are returned by
+[List Services](/service/list). Use `ownership.type` and
+`messagingPolicy.type` to determine whether a sender accepts plain text and
+which templates it can send.
 
-- **Alphanumeric Sender** is a custom, branded sender name you request for your team. Once approved, it's yours to use freely for any message content.
-- **Belio-managed sender** is a ready-to-use sender owned and operated by Belio (e.g. Managed OTP), intended for a specific purpose such as authentication. Because Belio owns and is responsible for these senders, their use is restricted to that purpose, and messages sent through them require additional approval. See [Templates](/messaging/sms/templates/introduction) for how this applies to template-based sends.
+- **Team-owned** senders are requested for your team. Their messaging policy
+  can be `Standard` or `PoliticalCampaign`. Standard team-owned senders accept
+  plain-text messages; political campaign senders accept only approved
+  political campaign templates.
+- **Belio-managed** senders are owned and operated by Belio (for example,
+  Managed OTP). They accept managed templates whose scope key matches the
+  sender's ownership key; plain-text messages are not accepted.
 
-You can request either sender type from the [Services](https://cloud.belio.co.ke/services/services-menu) page.
+See [SMS sending](/messaging/sms/send#sender-and-template-eligibility) for the
+complete template rules. You can request a service from the
+[Services](https://cloud.belio.co.ke/services/services-menu) page.
 
 ![Service request cards for Alphanumeric Sender and Managed OTP](../../images/SMS-services-menu.png)
 

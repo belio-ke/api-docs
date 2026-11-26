@@ -3,13 +3,16 @@ title: "List templates"
 ---
 ## Overview
 
-Use this endpoint to retrieve SMS templates available to your API client. Each template includes its content, metadata, approval status, and parameter definitions.
+Use this endpoint to retrieve every SMS template for the API client's team. The
+response includes active, archived, pending, and rejected templates, newest
+first. Filter the results on the client to find templates that are eligible for
+the sender you plan to use.
 
 Use the returned `id` as the `templateId` when sending template-based SMS messages.
 
 <Note>
-    Templates are resolved for the team associated with the authenticated API client. No query parameters or request
-    body are required.
+    Templates are resolved for the team associated with the authenticated API
+    client. No query parameters or request body are required.
 </Note>
 
 ## Authentication
@@ -22,6 +25,8 @@ Refer to [Authentication](/authentication) for information on how to obtain a be
 
 ## Request
 
+`GET /template/sms` has no query parameters or request body.
+
 ### Headers
 
 | Header          | Required | Description             |
@@ -33,7 +38,7 @@ Refer to [Authentication](/authentication) for information on how to obtain a be
 
 ```bash
 curl --request GET \
-  --url https://api.belio.co.ke/templates/sms \
+  --url https://api.belio.co.ke/template/sms \
   --header 'Authorization: Bearer <access_token>'
 ```
 
@@ -47,25 +52,30 @@ On success, the endpoint returns `HTTP 200` with the SMS templates available to 
   "result": [
     {
       "id": "tpl-sms-001",
-      "content": "Hello {{sample}}, your code is {{code}}",
-      "description": "OTP template",
+      "content": "Hello {{name}}, the rally is on {{date}}.",
+      "description": "Rally reminder",
+      "tags": ["rally"],
       "shared": false,
       "status": "Active",
-      "category": "AUTHENTICATION",
+      "category": "MARKETING",
+      "scope": {
+        "type": "TeamMessaging",
+        "policy": { "type": "PoliticalCampaign" }
+      },
       "approvalStatus": "APPROVED",
       "paramDefinitions": [
         {
-          "name": "sample",
-          "format": "PlainText",
+          "name": "name",
+          "format": "Name",
           "required": true,
-          "default": "World"
+          "maxLength": 40
         },
         {
-          "name": "code",
-          "format": "PlainText",
+          "name": "date",
+          "format": "Date",
           "required": true,
-          "maxLength": 6,
-          "default": "123456"
+          "maxLength": 10,
+          "default": "2026-11-10"
         }
       ],
       "createdAt": "2024-11-18T10:49:34"
@@ -74,7 +84,7 @@ On success, the endpoint returns `HTTP 200` with the SMS templates available to 
 }
 ```
 
-If no templates are available, `result` is returned as an empty array:
+An empty team returns `HTTP 200` with `result` as an empty array:
 
 ```json
 {
@@ -95,14 +105,29 @@ If no templates are available, `result` is returned as an empty array:
 | `status`            | string   | Template entity status, such as `Active` or `Archived`.                                                     |
 | `category`          | string   | Template category, such as `AUTHENTICATION` or `MARKETING`.                                                 |
 | `approvalStatus`    | string   | Template approval state, such as `APPROVED`, `PENDING`, or `REJECTED`.                                      |
+| `scope`             | object   | Template messaging scope and policy. See the scope variants below.                                          |
 | `paramDefinitions`  | object[] | Parameter definitions for placeholders used in the template content.                                        |
-| `managedServiceKey` | string   | Managed service associated with the template. Omitted when the template is not linked to a managed service. |
 | `reviewComment`     | string   | Review feedback associated with the template. Omitted when absent.                                          |
 | `createdAt`         | string   | ISO-8601 local date-time when the template was created.                                                     |
 | `updatedAt`         | string   | ISO-8601 local date-time of the last update. Omitted when absent.                                           |
 
+`scope` is one of the following. Managed templates are identified by their
+scope; the response does not include a `managedServiceKey` field.
+
+```json
+[
+  { "type": "TeamMessaging", "policy": { "type": "Standard" } },
+  { "type": "TeamMessaging", "policy": { "type": "PoliticalCampaign" } },
+  { "type": "ManagedService", "key": "otp-service" }
+]
+```
+
+Empty `tags`, `paramDefinitions`, and `reviewComment` fields, and a null or
+empty `updatedAt`, are omitted from the response.
+
 <Note>
-    For more information about template status and approval states, see [View Templates](/messaging/sms/templates/view).
+    For more information about template status and approval states, see
+    [View Templates](/messaging/sms/templates/view-templates).
 </Note>
 
 ## Parameter Definition Fields
@@ -113,9 +138,13 @@ The `paramDefinitions` array describes the parameters required to resolve placeh
 | ----------- | ------- | --------------------------------------------------------------------------- |
 | `name`      | string  | Parameter name matching a `{{name}}` placeholder in the template content.   |
 | `format`    | string  | Parameter format, such as `PlainText`.                                      |
-| `required`  | boolean | Indicates whether the parameter must be supplied when sending the template. |
-| `default`   | string  | Default value used when the parameter is not supplied.                      |
+| `required`  | boolean | Whether the template marks this parameter as required; a value or default is needed to send. |
+| `default`   | string  | Default used when the parameter is not supplied. Omitted when unset.         |
 | `maxLength` | number  | Maximum allowed parameter length. Omitted when no maximum is configured.    |
+
+`format` and `required` are always present. Older templates without a format
+use `PlainText`. See [Template Parameters](/messaging/sms/templates/parameters)
+for accepted values and send-time validation.
 
 ## Error Responses
 
@@ -124,13 +153,11 @@ The `paramDefinitions` array describes the parameters required to resolve placeh
 | `401 Unauthorized`          | The bearer token is missing, invalid, or expired.                   |
 | `403 Forbidden`             | The API client does not have the `message.sms.template.list` scope. |
 | `429 Too Many Requests`     | The configured request rate limit has been exceeded.                |
-| `503 Service Unavailable`   | SMS templates are temporarily unavailable. Retry the request later. |
+| `503 Service Unavailable`   | Lookup failed; the response says `SMS templates not available currently. Check back later.` |
 | `500 Internal Server Error` | An unexpected server or API configuration error occurred.           |
 
 ## Rate Limit
 
-This endpoint is limited to **10 requests per second per team**.
-
-<Note>
-    Use the returned template `id` as `templateId` when sending a template-based SMS message through the Message API.
-</Note>
+This endpoint is limited to **10 requests per second per team**. Use the returned
+template `id` as `templateId` when sending a template-based SMS message through
+the Message API.

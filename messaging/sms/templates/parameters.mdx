@@ -4,10 +4,10 @@ title: "Template Parameters"
 
 Template parameters supply the values for placeholders in the template content. Every parameter is a JSON object with exactly two fields and has no `type` discriminator on SMS parameters (unlike WhatsApp template parameters):
 
-| Field   | Description                                                                   |
-| ------- | ----------------------------------------------------------------------------- |
+| Field   | Description                                                                       |
+| ------- | --------------------------------------------------------------------------------- |
 | `name`  | Placeholder name that must match a `{{name}}` placeholder in the template content |
-| `value` | Substitution value inserted into the template                                 |
+| `value` | Substitution value inserted into the template                                     |
 
 ```json
 { "name": "code", "value": "654321" }
@@ -15,7 +15,12 @@ Template parameters supply the values for placeholders in the template content. 
 
 ## Placeholders
 
-Template content uses double-brace placeholders, which can be **named** (`{{sample}}`, `{{code}}`) or **positional** (`{{1}}`, `{{2}}`). In a request, supply a parameter whose `name` matches the placeholder identifier. For a positional placeholder `{{1}}`, use `"name": "1"`. At send time the API replaces each placeholder with the corresponding parameter value, or with the parameter definition's default when one is omitted.
+Template content uses double-brace placeholders, which can be **named**
+(`{{name}}`, `{{code}}`) or **positional** (`{{1}}`, `{{2}}`). In a request,
+supply a parameter whose `name` matches the placeholder identifier. For a
+positional placeholder `{{1}}`, use `"name": "1"`. At send time the API
+replaces each placeholder with the corresponding parameter value, or with the
+parameter definition's default when one is omitted.
 
 ## Parameter definitions
 
@@ -31,29 +36,62 @@ Each template carries parameter definitions that govern validation. These are co
 }
 ```
 
-| Field       | Type    | Default       | Description                                                        |
-| ----------- | ------- | ------------- | ----------------------------------------------------------------- |
-| `name`      | string  | —             | Parameter name; must match a placeholder in template content      |
-| `format`    | string  | `"PlainText"` | Value format constraint                                           |
-| `required`  | boolean | `true`        | Whether the client must supply the parameter                     |
-| `maxLength` | integer | —             | Maximum allowed length of the value (optional)                    |
-| `default`   | string  | —             | Default value used when the client omits the parameter (optional) |
+| Field       | Type    | Default       | Description                                                         |
+| ----------- | ------- | ------------- | ------------------------------------------------------------------- |
+| `name`      | string  | —             | Parameter name; must match a placeholder in template content       |
+| `format`    | string  | `"PlainText"` | Value format constraint; defaults to `PlainText` on older templates |
+| `required`  | boolean | —             | Returned on the definition. A value or a default is needed to send. |
+| `maxLength` | integer | —             | Maximum character length of the value; omitted when unset           |
+| `default`   | string  | —             | Default value used when the client omits the parameter; optional    |
 
 ## Parameter formats
 
 The `format` on a parameter definition restricts what characters are allowed in the value:
 
-| Format         | Allowed values                                                  | Typical use                                 |
-| -------------- | --------------------------------------------------------------- | ------------------------------------------- |
-| `PlainText`    | Printable characters, except `{`, `}`, and control characters   | General short text (product names)          |
-| `Alphanumeric` | Letters and digits only (A–Z, a–z, 0–9)                         | Reference codes, tokens without punctuation |
-| `Numeric`      | Digits only (0–9)                                               | OTPs, PINs, numeric identifiers             |
-| `Name`         | Unicode letters, spaces, hyphens, apostrophes (`^[\p{L}\s'-]+$`) | First names, surnames, display names        |
+| Format         | Accepted values |
+| -------------- | --------------- |
+| `PlainText`    | Any value passing the common checks below |
+| `Alphanumeric` | Letters and digits only |
+| `Numeric`      | Digits only |
+| `Name`         | Letters, spaces, hyphens, and apostrophes |
+| `Date`         | A real ISO date in `YYYY-MM-DD` format |
+
+Every value must be non-empty and must not contain `{`, `}`, or control
+characters. If `maxLength` is set, the value's character length must not exceed
+it. These checks also apply to default values.
 
 ## Required vs optional parameters
 
-For each placeholder in the template content:
+For every placeholder in the template content:
 
-- If you **provide** the parameter in `params`, it is validated against the definition.
-- If you **omit** it and the definition has a `default`, the default is used automatically.
-- If you **omit** it and there is no `default`, the request is rejected with `Missing required parameter '{name}'`.
+- Supply a matching `{ "name", "value" }` entry in `params`, or the API uses
+  the definition's `default`.
+- If neither a value nor a default is available, the send fails with
+  `Missing required parameter '<name>'`.
+- Supplied and default values are both checked against the parameter's format
+  and maximum length.
+- Unknown parameter names and duplicate names are rejected.
+
+The `required` flag is returned with the definition, but send-time presence is
+determined by whether a value or a default is available.
+
+## Validation errors
+
+Parameter validation failures return `HTTP 400` with
+`desc: "Template parameter validation failed"`. For
+`TemplateSendToMany`, errors are returned in `result.errors`. For
+`TemplateSendToEach`, errors are keyed by phone number, and an individual
+parameter error is prefixed with the parameter name.
+
+Examples of validation messages:
+
+| Message | Cause |
+| ------- | ----- |
+| `Value for parameter 'code' must be numeric` | Value does not satisfy `Numeric` |
+| `Value for parameter 'name' must be a valid name` | Value does not satisfy `Name` |
+| `Value for parameter 'date' must be an ISO date (YYYY-MM-DD)` | Value is not a real ISO date |
+| `Value for parameter 'name' must not exceed 40 characters` | Value exceeds `maxLength` |
+| `Value for parameter 'name' must be non-empty` | Value is empty |
+| `Value for parameter 'name' contains forbidden characters` | Value contains braces or control characters |
+| `Unknown parameter 'name'` | Supplied name is not defined by the template |
+| `Duplicate parameter 'name'` | Name appears more than once in `params` |

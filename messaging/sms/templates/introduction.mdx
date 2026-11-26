@@ -1,24 +1,31 @@
-SMS templates are pre-approved message formats that let you send structured, reliable messages by referencing a template instead of composing raw text. Template content uses `{{placeholder}}` syntax, and placeholders may be named (e.g. `{{name}}`) or positional (e.g. `{{1}}`).
+SMS templates are reusable message formats that let you send structured,
+reliable messages by referencing a template instead of composing raw text.
+Template content uses `{{placeholder}}` syntax, and placeholders may be named
+(e.g. `{{name}}`) or positional (e.g. `{{1}}`).
 
 SMS templates are categorized into three types:
 1. **Marketing** (`MARKETING`): Promotional messages, special offers, and event announcements.
 2. **Utility** (`UTILITY`): Transactional information such as order confirmations, appointment reminders, and account updates.
 3. **Authentication** (`AUTHENTICATION`): Verification codes and one-time passwords.
 
+### Template scope and approval
+
+Each template has a `scope` that determines the sender policy it belongs to:
+
+- A `TeamMessaging` template has a `policy` of `Standard` or
+  `PoliticalCampaign`.
+- A `ManagedService` template has a `key` identifying its Belio-managed sender.
+
+Approval status is independent of template `status`. A template must be
+`Active` to send. Depending on the sender and scope, an approval status of
+`APPROVED` or `FLAGGED` may be accepted; political campaign sends require
+`APPROVED` only. See [SMS sending](/messaging/sms/send#sender-and-template-eligibility)
+for the complete compatibility rules.
+
 ### Belio-managed Senders and Approval
 
-When creating a template, you can optionally link it to a Belio-managed sender (e.g. Belio OTP).
-
-- If you don't link a managed sender, the template is ready to use immediately on your own Alphanumeric Sender.
-- If you link a managed sender, the template must be reviewed and approved by Belio before it can be sent. During review, Belio checks that the template's category matches the linked managed service's category, along with other requirements.
-
-Belio also provides pre-approved templates ready to use immediately. These are not exclusive to Belio-managed senders and can be used with any sender type.
-
-### Important Notes
-
-<Note>
-    <b>Important</b>
-    * Templates linked to a Belio-managed sender must be **approved** before they can be sent
-    * Templates without a linked managed sender are usable **immediately** on your Alphanumeric Sender
-    * Templates must be in a **sendable state** (`status: Active`, `approvalStatus: APPROVED`)
-</Note>
+When creating a template, you can link it to a Belio-managed sender. Such
+templates use `scope: { "type": "ManagedService", "key": "<key>" }` and can only
+be sent through a Belio-managed service with the matching ownership key. Belio
+also provides pre-approved templates; eligibility still depends on the
+template's scope, approval status, and the sender used.

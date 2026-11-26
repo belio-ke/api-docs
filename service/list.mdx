@@ -14,3 +14,34 @@ openapi: "GET /service"
 ### Rate Limit
 
 This endpoint is rate limited to **1** request per second.
+
+## SMS sender fields
+
+SMS services include `ownership` and `messagingPolicy`. Use these fields to
+determine whether the sender accepts plain-text messages and which SMS templates
+can be sent with it.
+
+```json
+{
+  "id": "service_xyz_001",
+  "serviceName": "RALLY",
+  "productType": "SMS",
+  "teamId": "team_xyz_001",
+  "status": "Active",
+  "ownership": { "type": "TeamOwned" },
+  "messagingPolicy": { "type": "PoliticalCampaign" },
+  "createdAt": "2024-11-18T10:49:34",
+  "updatedAt": null
+}
+```
+
+`messagingPolicy.type` is `Standard` or `PoliticalCampaign`. `ownership` is one
+of:
+
+| Ownership type  | Additional field | Description |
+| --------------- | ---------------- | ----------- |
+| `TeamOwned`      | —                | Sender owned by your team |
+| `BelioManaged`   | `key`            | Belio-managed sender, for example `"otp-service"` |
+
+See [SMS sending](/messaging/sms/send#sender-and-template-eligibility) for the
+rules that apply to plain-text and template messages.

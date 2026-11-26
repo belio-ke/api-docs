@@ -14,6 +14,52 @@ openapi: "POST /message/{serviceId}"
 
 This endpoint is rate limited to **400** messages per second.
 
+## Sender and template eligibility
+
+The `serviceId` path parameter is the service `id` returned by
+[List Services](/service/list). Check the sender's `ownership` and
+`messagingPolicy` fields before selecting a request mode or template.
+
+### Plain-text messages
+
+`SendToEach` and `SendToMany` are plain-text modes. They are accepted only by a
+standard team-owned sender:
+
+| Sender | Plain-text messages |
+| ------ | ------------------- |
+| Team-owned with `messagingPolicy.type: Standard` | Accepted |
+| Team-owned with `messagingPolicy.type: PoliticalCampaign` | Rejected with `Political campaign services only accept approved template messages.` |
+| Belio-managed | Rejected with `Managed services only accept managed template messages.` |
+
+### Template messages
+
+A template can be sent only when its `status` is `Active` and it belongs to the
+authenticated team. Its `scope` and approval status must also be compatible
+with the sender:
+
+| Sender | Eligible template |
+| ------ | ----------------- |
+| Team-owned, `Standard` | A `TeamMessaging` template with `policy.type: Standard`; or a `ManagedService` template with `approvalStatus: APPROVED` or `FLAGGED` |
+| Team-owned, `PoliticalCampaign` | A `TeamMessaging` template with `policy.type: PoliticalCampaign` and `approvalStatus: APPROVED` exactly |
+| Belio-managed with ownership `key` | A `ManagedService` template whose `scope.key` matches the sender's ownership key and whose `approvalStatus` is `APPROVED` or `FLAGGED` |
+
+`FLAGGED` is not accepted for a political campaign template. See
+[List templates](/messaging/sms/templates/list-templates) for the `scope` shape
+and [Template Parameters](/messaging/sms/templates/parameters) for parameter
+validation.
+
+Template selection failures return an error response with a `desc` message.
+Depending on the failed check, messages include:
+
+- `Template is not active`
+- `Template does not belong to this team`
+- `Template is not approved`
+- `Political campaign templates must be approved before sending. Current approval status: FLAGGED`
+- `Political campaign templates can only be sent by political campaign services`
+- `Political campaign services only accept approved political campaign templates`
+- `Managed service requires a template for key '<key>'`
+- `Message template <id> not found`
+
 ## Request Modes
 
 The required `type` field selects one of four request modes. **Free-form** modes
@@ -206,10 +252,7 @@ referencing its `templateId` (see [SMS Templates](/messaging/sms/templates/intro
 | 400  | Invalid phone numbers      | `Invalid phone numbers: ...`                                                                    |
 | 400  | Empty addresses / messages | `No valid recipients found...` or `No valid messages found...`                                  |
 | 400  | Too many recipients        | `Maximum number of recipients exceeded.` (10 for both free-form and template modes)            |
-| 400  | Template not found         | `Message template tpl-sms-001 not found.`                                                       |
-| 400  | Template not sendable      | `Message template tpl-sms-001 is not sendable. Current status: Active and approval status: PENDING` |
-| 400  | Managed service not found  | `Managed service descriptor not found for key: otp-service`. See [Belio-managed Senders and Approval](/messaging/sms/templates/introduction#belio-managed-senders-and-approval). |
-| 400  | Category mismatch          | `Template category AUTHENTICATION does not match managed service descriptor category MARKETING`. See [Belio-managed Senders and Approval](/messaging/sms/templates/introduction#belio-managed-senders-and-approval). |
+| 400  | Template selection failure | See [template selection errors](#sender-and-template-eligibility).                                |
 | 400  | Insufficient message units | Team balance error message. Raised when consumption fails entirely for the routable units      |
 | 400  | Invalid `receiptRequest`   | Correlator or callback URL validation message                                                  |
 | 401  | Authentication failure     | —                                                                                              |
@@ -268,6 +311,7 @@ For **TemplateSendToMany**, errors are returned under a single `errors` key:
 | `Parameter '{name}': Value for parameter '{name}' must be alphanumeric`        | `format` is `Alphanumeric`                                    |
 | `Parameter '{name}': Value for parameter '{name}' must be numeric`             | `format` is `Numeric`                                         |
 | `Parameter '{name}': Value for parameter '{name}' must be a valid name`        | `format` is `Name`                                            |
+| `Parameter '{name}': Value for parameter '{name}' must be an ISO date (YYYY-MM-DD)` | `format` is `Date`; value is not a real ISO date          |
 | `Value for parameter '{name}' must be non-empty`                              | Empty value                                                    |
 | `Value for parameter '{name}' contains forbidden characters`                  | Value contains `{`, `}`, or control characters                 |
 | `Name must be a non-empty identifier using letters, digits, and underscores`  | Invalid parameter name                                         |
@@ -337,7 +381,7 @@ Request against a service configured for Safaricom only:
     "message": "Hello World",
     "addresses": [
         "254712345678",
-        "254710000000",
+        "254710000000"
     ]
 }
 ```

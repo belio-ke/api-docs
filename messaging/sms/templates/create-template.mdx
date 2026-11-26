@@ -13,4 +13,7 @@ SMS templates are created through the Belio Cloud Portal. There is no API for te
 - **Message** (required) — the template content, up to 960 characters. Wrap words in double curly braces to mark them as placeholders, e.g. `{{name}}`, `{{orderId}}`, or `{{1}}`. You can also use the **Add placeholder** button to insert one.
 3. Optionally, under **Belio-managed sender**, link the template to an approved Belio-managed service (e.g. Belio OTP) if your team has one.
 
-If you link a Belio-managed sender, custom templates using it must be reviewed and approved by Belio before they can be sent. See [Belio-managed Senders and Approval](/messaging/sms/templates/introduction#belio-managed-senders-and-approval).
+If you link a Belio-managed sender, custom templates using it are reviewed by
+Belio. Sending eligibility depends on the template's status, approval status,
+and matching managed-service key. See
+[Belio-managed Senders and Approval](/messaging/sms/templates/introduction#belio-managed-senders-and-approval).
